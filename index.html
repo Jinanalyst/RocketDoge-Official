@@ -6,7 +6,6 @@
     <title>RocketDoge Staking Platform</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="styles.css" rel="stylesheet">
     <style>
         :root {
             --primary-color: #FF007A;
@@ -15,8 +14,10 @@
             --card-bg: #212429;
             --border-color: #2C2F36;
             --hover-bg: #2C2F36;
+            --gradient-primary: linear-gradient(45deg, #ff6b6b, #ff8e53);
         }
 
+        /* Base Styles */
         body {
             background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
             color: #ffffff;
@@ -26,6 +27,7 @@
             min-height: 100vh;
         }
 
+        /* Layout */
         .container {
             padding: 15px;
             max-width: 100%;
@@ -40,6 +42,23 @@
             }
         }
 
+        /* Navigation */
+        .navbar {
+            background: var(--bg-darker);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar h3 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        /* Staking Cards */
         .staking-cards {
             display: grid;
             grid-template-columns: 1fr;
@@ -49,7 +68,7 @@
 
         @media (min-width: 768px) {
             .staking-cards {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(3, 1fr);
             }
         }
 
@@ -60,8 +79,15 @@
             backdrop-filter: blur(10px);
             padding: 20px;
             margin-bottom: 15px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.2);
+        }
+
+        /* Form Elements */
         .form-control {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -74,18 +100,23 @@
         }
 
         .form-control:focus {
-            border-color: #007bff;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 0 0 2px rgba(255, 0, 122, 0.25);
             outline: none;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
         }
 
+        /* Buttons */
         .btn {
-            width: 100%;
-            padding: 12px 20px;
+            padding: 12px 24px;
             border-radius: 8px;
             font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: 100%;
             margin-bottom: 10px;
-            font-size: 16px;
         }
 
         @media (min-width: 768px) {
@@ -95,6 +126,18 @@
             }
         }
 
+        .btn-primary {
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        /* Stats Display */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -121,24 +164,24 @@
             margin: 5px 0;
         }
 
+        /* Wallet Info */
         .wallet-info {
             background: rgba(255, 255, 255, 0.05);
             padding: 15px;
             border-radius: 10px;
             margin-top: 20px;
             word-break: break-all;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
             font-size: 14px;
         }
 
-        .navbar {
-            padding: 15px 0;
-            background: rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
+        /* Notifications */
         #notification {
             position: fixed;
             top: 20px;
@@ -164,342 +207,110 @@
             }
         }
 
-        .navbar {
-            background: var(--bg-darker) !important;
-            border-bottom: 1px solid var(--border-color);
-            padding: 1.5rem 0;
-            margin-bottom: 2rem;
-        }
-
-        .navbar h3 {
-            font-weight: 600;
-            margin-bottom: 1rem;
-            background: linear-gradient(45deg, var(--primary-color), #FF6B6B);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .navbar-nav {
-            gap: 2rem;
-        }
-
-        .nav-link {
-            color: #848D9F !important;
-            font-weight: 500;
-            transition: color 0.2s;
-            font-size: 1.1rem;
-            padding: 0.5rem 1.5rem !important;
-            border-radius: 12px;
-        }
-
-        .nav-link:hover {
-            color: white !important;
-            background: var(--hover-bg);
-        }
-
-        .nav-link.active {
-            color: white !important;
-            background: var(--primary-color);
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
-            border: none;
-            padding: 10px 30px;
-            border-radius: 25px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-        }
-
-        .stats-card {
-            text-align: center;
-            padding: 15px;
-        }
-
-        .stats-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #ff8e53;
-        }
-
-        .rocket-doge-logo {
-            width: 100px;
-            height: 100px;
-            margin-bottom: 20px;
-        }
-
-        .wallet-btn {
-            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
-            border: none;
-            padding: 10px 30px;
-            border-radius: 25px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            color: white;
-            margin-bottom: 20px;
-        }
-
-        .wallet-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-            background: linear-gradient(45deg, #ff8e53, #ff6b6b);
-        }
-
-        .wallet-address {
-            font-family: monospace;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 8px 15px;
-            border-radius: 15px;
-            font-size: 14px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .input-group {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 25px;
-            padding: 5px;
-        }
-
-        .form-control {
-            background: transparent;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-        }
-
-        .form-control:focus {
-            background: transparent;
-            color: white;
-            box-shadow: none;
-        }
-
-        .page-title {
-            text-align: center;
-        }
-
+        /* Network Selector */
         .network-selector select {
             padding: 0.25rem 1rem;
             font-size: 0.875rem;
             border-radius: 0.5rem;
-            background-color: var(--bg-darker) !important;
-            border-color: var(--border-color);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
         }
-        
+
         .network-selector select:focus {
-            box-shadow: none;
+            outline: none;
             border-color: var(--primary-color);
         }
-        
-        .network-display {
-            font-size: 0.75rem;
-            padding: 0.35rem 0.65rem;
-            border-radius: 0.5rem;
-        }
-        
-        .network-display.devnet {
-            background-color: #ffc107;
-            color: #000;
-        }
-        
-        .network-display.mainnet {
-            background-color: #198754;
-            color: #fff;
-        }
     </style>
+
     <!-- Web3 Dependencies -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="https://unpkg.com/@solana/spl-token@0.3.7/lib/index.iife.min.js"></script>
-    <script src="js/wallet.js" defer></script>
-    <script src="js/staking.js" type="module" defer></script>
-    
-    <script type="module">
-        import { stakingManager } from './js/staking.js';
-        
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Initialize staking manager
-            await stakingManager.initialize();
-            
-            // Initialize network selector
-            const networkSelect = document.getElementById('networkSelect');
-            if (networkSelect) {
-                networkSelect.value = walletManager.getNetwork();
-                networkSelect.addEventListener('change', async (e) => {
-                    await walletManager.switchNetwork(e.target.value);
-                    // Reload staking data when network changes
-                    await stakingManager.loadStakingData();
-                });
-            }
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
+    <!-- Notifications -->
     <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+    <div id="successMessage" class="alert alert-success" style="display: none;"></div>
+
+    <!-- Navigation -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
             <h3>RocketDoge</h3>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="index.html">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="tasks.html">Tasks</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="dex.html">DEX</a>
-                    </li>
-                </ul>
-                <div class="d-flex align-items-center">
-                    <div class="network-selector me-3">
-                        <select class="form-select form-select-sm bg-dark text-light border-secondary" id="networkSelect">
-                            <option value="devnet">Devnet</option>
-                            <option value="mainnet">Mainnet</option>
-                        </select>
-                    </div>
-                    <span class="network-display me-3 badge bg-warning">DEVNET</span>
-                    <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
-                </div>
+            <div class="network-selector">
+                <select id="networkSelect" class="form-select form-select-sm">
+                    <option value="devnet">Devnet</option>
+                    <option value="mainnet" disabled>Mainnet (Coming Soon)</option>
+                </select>
             </div>
         </div>
     </nav>
 
     <div class="container mt-4">
-        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
-        
         <!-- Devnet Notice -->
         <div class="alert alert-info mb-4">
             <strong>Devnet Mode:</strong> This is running on Solana devnet. A test token will be created when you connect your wallet.
         </div>
 
-        <div class="row staking-cards">
-            <!-- Staking Stats -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Staking Stats</h5>
-                        <div class="stat-item">
-                            <span class="label">Your Balance:</span>
-                            <span id="tokenBalance">0</span> RDOGE
-                        </div>
-                        <div class="stat-item">
-                            <span class="label">Total Staked:</span>
-                            <span id="totalStaked">0</span> RDOGE
-                        </div>
-                        <div class="stat-item">
-                            <span class="label">Current APY:</span>
-                            <span id="currentAPY">120%</span>
-                        </div>
+        <!-- Staking Cards -->
+        <div class="staking-cards">
+            <!-- Stats Card -->
+            <div class="card">
+                <h4>Staking Stats</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div>APR</div>
+                        <div class="stat-value">120%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div>Total Staked</div>
+                        <div class="stat-value" id="totalStaked">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div>Your Stake</div>
+                        <div class="stat-value" id="yourStake">0</div>
                     </div>
                 </div>
             </div>
 
-            <!-- User Stats -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Your Stats</h5>
-                        <div class="stat-item">
-                            <span class="label">Staked Amount:</span>
-                            <span id="stakedAmount">0</span> RDOGE
-                        </div>
-                        <div class="stat-item">
-                            <span class="label">Rewards Earned:</span>
-                            <span id="rewards">0</span> RDOGE
-                        </div>
-                    </div>
+            <!-- Stake Card -->
+            <div class="card">
+                <h4>Stake RDOGE</h4>
+                <div class="form-group mt-3">
+                    <input type="number" id="stakeAmount" class="form-control" placeholder="Amount to stake">
+                    <button id="stakeButton" class="btn btn-primary">Stake</button>
                 </div>
             </div>
 
-            <!-- Actions -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Actions</h5>
-                        
-                        <!-- Stake Form -->
-                        <div class="mb-3">
-                            <label for="stakeAmount" class="form-label">Stake Amount</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="stakeAmount" placeholder="0">
-                                <button class="btn btn-primary" id="stakeButton">Stake</button>
-                            </div>
-                        </div>
-
-                        <!-- Unstake Form -->
-                        <div class="mb-3">
-                            <label for="unstakeAmount" class="form-label">Unstake Amount</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="unstakeAmount" placeholder="0">
-                                <button class="btn btn-danger" id="unstakeButton">Unstake</button>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Unstake Card -->
+            <div class="card">
+                <h4>Unstake RDOGE</h4>
+                <div class="form-group mt-3">
+                    <input type="number" id="unstakeAmount" class="form-control" placeholder="Amount to unstake">
+                    <button id="unstakeButton" class="btn btn-primary">Unstake</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Wallet Connection -->
+        <div class="text-center mt-4">
+            <button id="connectWalletBtn" class="btn btn-primary">Connect Wallet</button>
+            <div class="wallet-info" style="display: none;">
+                <div class="wallet-address" id="walletAddress"></div>
+                <div class="mt-2">Balance: <span id="walletBalance">0</span> RDOGE</div>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@latest/dist/browser/anchor.min.js"></script>
-    <script src="js/app.js" type="module"></script>
     <script type="module">
         import { walletManager } from './js/app.js';
+        import { stakingManager } from './js/staking.js';
         
         document.addEventListener('DOMContentLoaded', async () => {
-            // Initialize network selector
-            const networkSelect = document.getElementById('networkSelect');
-            if (networkSelect) {
-                // Set initial value
-                networkSelect.value = walletManager.getNetwork();
-                
-                // Add change listener
-                networkSelect.addEventListener('change', async (e) => {
-                    await walletManager.switchNetwork(e.target.value);
-                });
-            }
-            
-            // Initialize other components
-            setupIndexEventListeners();
+            await walletManager.initialize();
+            await stakingManager.initialize();
         });
-
-        function setupIndexEventListeners() {
-            // Add event listeners for staking form
-            const stakeForm = document.getElementById('stakeForm');
-            if (stakeForm) {
-                stakeForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    if (!walletManager.isConnected()) {
-                        walletManager.showError('Please connect your wallet first');
-                        return;
-                    }
-                    await handleStake();
-                });
-            }
-
-            // Add event listeners for unstaking form
-            const unstakeForm = document.getElementById('unstakeForm');
-            if (unstakeForm) {
-                unstakeForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    if (!walletManager.isConnected()) {
-                        walletManager.showError('Please connect your wallet first');
-                        return;
-                    }
-                    await handleUnstake();
-                });
-            }
-        }
     </script>
 </body>
 </html>

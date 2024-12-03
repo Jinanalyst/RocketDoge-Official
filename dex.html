@@ -599,13 +599,27 @@
     <script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@latest/dist/browser/anchor.min.js"></script>
     <script src="dex.js" type="module"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", async () => {
+            // Initialize wallet buttons
             const walletBtn = document.getElementById("walletBtn");
-            walletBtn.addEventListener("click", async () => {
-                if (!walletManager.isConnected()) {
-                    await walletManager.connectWallet();
-                }
-            });
+            const connectWalletBtn = document.getElementById("connectWalletBtn");
+            
+            if (walletBtn) {
+                walletBtn.addEventListener("click", async () => {
+                    await connectWallet();
+                });
+            }
+            
+            if (connectWalletBtn) {
+                connectWalletBtn.addEventListener("click", async () => {
+                    await connectWallet();
+                });
+            }
+
+            // Initialize other components
+            await initializeSolana();
+            await initializeJupiter();
+            setupEventListeners();
         });
     </script>
 </body>

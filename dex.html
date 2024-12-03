@@ -403,62 +403,47 @@
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@latest/dist/browser/anchor.min.js"></script>
-    <script src="js/app.js" type="module"></script>
     <script type="module">
         import { walletManager } from './js/app.js';
         import { SwapManager, TOKEN_CONFIGS, POOL_CONFIGS } from './js/swap.js';
         
         let swapManager;
-        
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Initialize network selector
-            const networkSelect = document.getElementById('networkSelect');
-            if (networkSelect) {
-                // Set initial value
-                networkSelect.value = walletManager.getNetwork();
+
+        // Initialize the DEX
+        async function initializeDex() {
+            try {
+                await walletManager.initialize();
                 
-                // Add change listener
+                // Initialize SwapManager with current network
+                const networkSelect = document.getElementById('networkSelect');
+                const selectedNetwork = networkSelect ? networkSelect.value : 'devnet';
+                swapManager = new SwapManager(selectedNetwork);
+                await swapManager.initialize();
+                
+                // Setup network change handler
                 networkSelect.addEventListener('change', async (e) => {
-                    await walletManager.switchNetwork(e.target.value);
-                    await initializeSwapManager();
+                    try {
+                        const newNetwork = e.target.value;
+                        await walletManager.switchNetwork(newNetwork);
+                        swapManager = new SwapManager(newNetwork);
+                        await swapManager.initialize();
+                        updateUI();
+                    } catch (error) {
+                        console.error('Failed to switch network:', error);
+                        showError('Failed to switch network. Please try again.');
+                    }
                 });
+
+                setupDexEventListeners();
+                updateUI();
+            } catch (error) {
+                console.error('Failed to initialize DEX:', error);
+                showError('Failed to initialize DEX. Please check your connection and try again.');
             }
-            
-            // Initialize wallet connection listener
-            walletManager.onWalletConnect(async () => {
-                await initializeSwapManager();
-                document.getElementById('swapInterface').classList.remove('disabled');
-            });
-
-            walletManager.onWalletDisconnect(() => {
-                swapManager = null;
-                document.getElementById('swapInterface').classList.add('disabled');
-            });
-            
-            // Initialize DEX-specific event listeners
-            setupDexEventListeners();
-            
-            // Initialize token lists
-            await initializeTokenLists();
-
-            // Initialize swap manager if wallet is connected
-            if (walletManager.isConnected()) {
-                await initializeSwapManager();
-                document.getElementById('swapInterface').classList.remove('disabled');
-            }
-        });
-
-        async function initializeSwapManager() {
-            if (!walletManager.isConnected()) return;
-            
-            swapManager = new SwapManager(
-                walletManager.getConnection(),
-                walletManager.getWallet()
-            );
-
-            // Update token balances
-            await updateTokenBalances();
         }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeDex);
 
         async function updateTokenBalances() {
             if (!swapManager) return;
@@ -692,31 +677,20 @@
     <nav class="navbar navbar-expand-lg">
         <div class="container">
             <h3>RocketDoge</h3>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="index.html">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="tasks.html">Tasks</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="dex.html">DEX</a>
-                    </li>
-                </ul>
-                <div class="d-flex align-items-center">
-                    <div class="network-selector me-3">
-                        <select class="form-select form-select-sm bg-dark text-light border-secondary" id="networkSelect">
-                            <option value="devnet">Devnet</option>
-                            <option value="mainnet">Mainnet</option>
-                        </select>
-                    </div>
-                    <span class="network-display me-3 badge bg-warning">DEVNET</span>
-                    <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
+            <div class="d-flex align-items-center">
+                <!-- Network Selector -->
+                <div class="network-selector me-3">
+                    <select id="networkSelect" class="form-select bg-dark text-white border-secondary">
+                        <option value="devnet">Devnet</option>
+                        <option value="mainnet" disabled>Mainnet (Coming Soon)</option>
+                    </select>
                 </div>
+                <!-- Network Info -->
+                <span id="networkInfo" class="network-display bg-dark text-white me-3"></span>
+                <!-- Connect Wallet Button -->
+                <button id="connectWalletBtn" class="btn btn-primary">
+                    Connect Wallet
+                </button>
             </div>
         </div>
     </nav>

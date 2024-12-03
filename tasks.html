@@ -2,193 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RocketDoge Tasks Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RocketDoge Tasks</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-            color: #ffffff;
+            background: #13151C;
+            color: white;
             font-family: 'Inter', sans-serif;
-            padding: 0;
-            margin: 0;
-            min-height: 100vh;
-        }
-
-        .container {
-            padding: 15px;
-            max-width: 100%;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        @media (min-width: 768px) {
-            .container {
-                max-width: 1140px;
-                padding: 20px;
-            }
-        }
-
-        .navbar {
-            padding: 15px 0;
-            background: rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .navbar h3 {
-            margin: 0;
-            font-size: 1.5rem;
         }
 
         .task-card {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        @media (max-width: 768px) {
-            .task-card {
-                padding: 15px;
-            }
-
-            .task-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .task-header .reward-badge {
-                margin-top: 10px;
-            }
-
-            .verification-input {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-
-            .btn {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-        }
-
-        .verification-input {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: white;
-            padding: 10px 15px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-        }
-
-        .verification-input:focus {
-            border-color: #007bff;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-verify {
-            background: #007bff;
-            border: none;
-            color: white;
-        }
-
-        .btn-verify:hover {
-            background: #0056b3;
-            transform: translateY(-2px);
-        }
-
-        .btn-verify:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .wallet-info {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            word-break: break-all;
-        }
-
-        .task-progress {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .progress {
-            height: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
-            overflow: hidden;
-            margin: 15px 0;
-        }
-
-        .progress-bar {
-            background: linear-gradient(90deg, #007bff, #00ff88);
-            transition: width 0.3s ease;
-        }
-
-        #errorMessage, #successMessage {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            padding: 15px;
-            border-radius: 8px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translate(-50%, -100%);
-                opacity: 0;
-            }
-            to {
-                transform: translate(-50%, 0);
-                opacity: 1;
-            }
-        }
-
-        .task-card {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .task-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.2);
         }
 
         .task-header {
@@ -198,231 +28,100 @@
             margin-bottom: 15px;
         }
 
-        .task-number {
-            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
-            color: white;
+        .reward-badge {
+            background: linear-gradient(45deg, #FF6B6B, #FFE66D);
+            color: black;
             padding: 5px 15px;
             border-radius: 20px;
             font-weight: bold;
         }
 
-        .reward-badge {
-            background: rgba(255, 215, 0, 0.2);
-            color: #ffd700;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
+        .task-content {
+            margin-bottom: 15px;
+        }
+
+        .verification-section {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
         }
 
         .btn-verify {
-            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            background: #FF6B6B;
             border: none;
             padding: 8px 20px;
-            border-radius: 20px;
+            border-radius: 8px;
             color: white;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .btn-verify:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+            font-weight: 500;
         }
 
         .btn-verify:disabled {
             background: #666;
-            cursor: not-allowed;
         }
 
-        .verification-input {
+        .progress {
+            height: 10px;
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            padding: 8px 15px;
-            color: white;
-            margin-top: 10px;
-            width: 100%;
         }
 
-        .verification-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+        .progress-bar {
+            background: linear-gradient(45deg, #FF6B6B, #FFE66D);
         }
 
-        .task-status {
-            font-size: 0.9em;
-            margin-top: 10px;
-        }
-
-        .status-pending {
-            color: #ffd700;
-        }
-
-        .status-completed {
-            color: #00ff00;
-        }
-
-        .social-icons {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .social-icons a {
-            color: white;
-            text-decoration: none;
-            font-size: 1.2em;
+        .completed {
+            opacity: 0.5;
         }
 
         .referral-link {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.2);
             padding: 10px;
-            border-radius: 10px;
-            margin-top: 10px;
-            font-family: monospace;
+            border-radius: 5px;
             word-break: break-all;
-        }
-
-        .wallet-button {
-            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
-            border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
-            color: white;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .wallet-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-        }
-
-        .wallet-info {
-            margin-top: 10px;
-        }
-
-        .wallet-address {
-            font-size: 0.9em;
-        }
-
-        .page-title {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .page-title h1 {
-            font-weight: bold;
-            font-size: 2.5em;
-        }
-
-        .page-title p {
-            font-size: 1.2em;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        /* Wallet Section Styles */
-        #walletSection {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 2rem;
-            margin: 2rem 0;
-        }
-
-        #connectWalletBtn {
-            padding: 1rem 2rem;
-            font-size: 1.2rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        #connectWalletBtn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .wallet-info {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-
-        .wallet-address {
-            font-family: monospace;
-            font-size: 1.1rem;
-            color: #00ff00;
-            margin-bottom: 0.5rem;
-        }
-
-        #walletBalance {
-            font-weight: bold;
-            color: #00ff00;
-        }
-
-        /* Task Section Styles */
-        #taskSection {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.5s ease, transform 0.5s ease;
-            will-change: opacity, transform;
-        }
-
-        #taskSection.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        #taskSection:not(.visible) {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
-            margin-right: 0.5rem;
-        }
-
-        .network-selector select {
-            padding: 0.25rem 1rem;
-            font-size: 0.875rem;
-            border-radius: 0.5rem;
-            background-color: var(--bg-darker) !important;
-            border-color: var(--border-color);
-        }
-        
-        .network-selector select:focus {
-            box-shadow: none;
-            border-color: var(--primary-color);
-        }
-        
-        .network-display {
-            font-size: 0.75rem;
-            padding: 0.35rem 0.65rem;
-            border-radius: 0.5rem;
-        }
-        
-        .network-display.devnet {
-            background-color: #ffc107;
-            color: #000;
-        }
-        
-        .network-display.mainnet {
-            background-color: #198754;
-            color: #fff;
+            margin: 10px 0;
         }
     </style>
-    <!-- Add Web3 Dependencies -->
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@latest/dist/browser/anchor.min.js"></script>
-    <script src="js/app.js" type="module"></script>
 </head>
 <body>
-    <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
-    <nav class="navbar navbar-expand-lg">
+    <!-- Wallet Connection Modal -->
+    <div class="modal fade" id="walletModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-white">Connect Wallet</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-grid gap-3">
+                        <!-- Phantom -->
+                        <button id="connectPhantomBtn" class="btn btn-outline-light d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <img src="assets/phantom.png" alt="Phantom" height="24" class="me-2">
+                                <span>Phantom</span>
+                            </div>
+                            <span class="badge bg-primary">Popular</span>
+                        </button>
+                        
+                        <!-- Solflare -->
+                        <button id="connectSolflareBtn" class="btn btn-outline-light d-flex align-items-center">
+                            <img src="assets/solflare.png" alt="Solflare" height="24" class="me-2">
+                            <span>Solflare</span>
+                        </button>
+                        
+                        <!-- WalletConnect -->
+                        <button id="connectWalletConnectBtn" class="btn btn-outline-light d-flex align-items-center">
+                            <img src="assets/walletconnect.png" alt="WalletConnect" height="24" class="me-2">
+                            <span>WalletConnect</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <h3>RocketDoge</h3>
+            <a class="navbar-brand" href="#">RocketDoge</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -439,335 +138,114 @@
                     </li>
                 </ul>
                 <div class="d-flex align-items-center">
+                    <!-- Network Selector -->
                     <div class="network-selector me-3">
-                        <select class="form-select form-select-sm bg-dark text-light border-secondary" id="networkSelect">
+                        <select id="networkSelect" class="form-select bg-dark text-white border-secondary">
                             <option value="devnet">Devnet</option>
-                            <option value="mainnet">Mainnet</option>
+                            <option value="mainnet" disabled>Mainnet (Coming Soon)</option>
                         </select>
                     </div>
-                    <span class="network-display me-3 badge bg-warning">DEVNET</span>
-                    <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
+                    <!-- Network Info -->
+                    <span id="networkInfo" class="network-display bg-dark text-white me-3"></span>
+                    <!-- Connect Wallet Button -->
+                    <button id="connectWalletBtn" class="btn btn-primary">
+                        Connect Wallet
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="page-title">
-            <h1>RocketDoge Tasks</h1>
-            <p>Complete tasks to earn ROCKET tokens</p>
-        </div>
-        <div id="walletSection" class="text-center mb-4">
-            <div class="row">
-                <div class="col-md-6 mx-auto">
-                    <div class="card bg-dark">
-                        <div class="card-body">
-                            <h5 class="card-title text-white">RDOGE Token Claim</h5>
-                            <div class="token-info mb-3">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Available:</span>
-                                    <span class="text-success">1000 RDOGE</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Your Balance:</span>
-                                    <span id="tokenBalance" class="text-info">0 RDOGE</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Tasks Completed:</span>
-                                    <span id="tasksCompleted" class="text-warning">0/5</span>
-                                </div>
-                            </div>
-                            <button id="claimButton" class="btn btn-success w-100" disabled>Complete Tasks to Claim 1000 RDOGE</button>
-                            <small class="text-muted mt-2 d-block">Complete all tasks below to claim your tokens</small>
-                        </div>
-                    </div>
-                </div>
+    <div class="container mt-4">
+        <div class="task-progress mb-4">
+            <h4>Task Progress</h4>
+            <div class="progress">
+                <div id="taskProgressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
             </div>
-            <button id="connectWalletBtn" class="btn btn-primary btn-lg">Connect Wallet</button>
-            <div class="wallet-info" style="display: none;">
-                <div class="wallet-address" id="walletAddress"></div>
-                <div class="mt-2">Balance: <span id="walletBalance">0</span> SOL</div>
+            <p class="mt-2">Complete all tasks to claim your rewards!</p>
+        </div>
+
+        <!-- OKX Tasks -->
+        <div class="task-card">
+            <div class="task-header">
+                <h5>OKX Exchange Tasks</h5>
+                <span class="reward-badge">400 RDOGE</span>
+            </div>
+            <div class="task-content">
+                <p>1. Sign up using our referral link:</p>
+                <div class="referral-link">https://bit.ly/okxaffiliatepartner</div>
+                <p>2. Deposit at least 100 USDT (TRON network) to your account</p>
+            </div>
+            <div class="verification-section">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control bg-dark text-white" placeholder="Enter OKX User ID" id="okxUserId">
+                    <button class="btn btn-verify" onclick="verifyOKXTask()">Verify</button>
+                </div>
             </div>
         </div>
 
-        <div id="taskSection" class="mt-4" style="display: none; opacity: 0; transform: translateY(20px);">
-            <!-- Task 1: Social Media -->
-            <div class="task-card" data-task-id="1">
-                <div class="task-header">
-                    <span class="task-number">Task 1</span>
-                    <span class="reward-badge">Reward: 100 ROCKET</span>
-                </div>
-                <h3>Follow Social Media Accounts</h3>
-                <p>Follow our social media accounts to stay updated and earn rewards!</p>
-                <div class="social-icons">
-                    <a href="https://bit.ly/41jnlTB" target="_blank" class="social-link" data-platform="twitter">Twitter</a>
-                    <a href="https://bit.ly/3CXUlqv" target="_blank" class="social-link" data-platform="telegram">Telegram</a>
-                </div>
-                <div class="mt-3">
-                    <input type="text" class="verification-input" placeholder="Enter your Twitter and Telegram usernames (comma-separated)" id="socialVerification">
-                    <button class="btn btn-verify mt-2">Verify Follow</button>
-                </div>
-                <div class="task-status" id="task1-status"></div>
+        <!-- Blofin Tasks -->
+        <div class="task-card">
+            <div class="task-header">
+                <h5>Blofin Exchange Tasks</h5>
+                <span class="reward-badge">400 RDOGE</span>
             </div>
+            <div class="task-content">
+                <p>1. Sign up using our referral link:</p>
+                <div class="referral-link">https://bit.ly/49hmIw1</div>
+                <p>2. Deposit at least 100 USDT (TRON network) to your account</p>
+            </div>
+            <div class="verification-section">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control bg-dark text-white" placeholder="Enter Blofin User ID" id="blofinUserId">
+                    <button class="btn btn-verify" onclick="verifyBlofinTask()">Verify</button>
+                </div>
+            </div>
+        </div>
 
-            <!-- Task 2: Blofin Signup -->
-            <div class="task-card" data-task-id="2">
-                <div class="task-header">
-                    <span class="task-number">Task 2</span>
-                    <span class="reward-badge">Reward: 200 ROCKET</span>
-                </div>
-                <h3>Sign Up with Blofin</h3>
-                <p>Create an account on Blofin using our referral link.</p>
-                <div class="referral-link" id="blofinLink">https://bit.ly/49hmIw1</div>
-                <div class="mt-3">
-                    <input type="text" class="verification-input" placeholder="Enter your Blofin username" id="blofinVerification">
-                    <button class="btn btn-verify mt-2">Verify Signup</button>
-                </div>
-                <div class="task-status" id="task2-status"></div>
+        <!-- Social Media Tasks -->
+        <div class="task-card">
+            <div class="task-header">
+                <h5>Social Media Tasks</h5>
+                <span class="reward-badge">200 RDOGE</span>
             </div>
+            <div class="task-content">
+                <p>Follow us on social media:</p>
+                <ul>
+                    <li>Follow on Twitter: <a href="https://bit.ly/41jnlTB" target="_blank">@RocketDoge</a></li>
+                    <li>Join Telegram: <a href="https://bit.ly/3CXUlqv" target="_blank">RocketDoge Community</a></li>
+                </ul>
+            </div>
+            <div class="verification-section">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control bg-dark text-white" placeholder="Enter Twitter Username" id="twitterUsername">
+                    <button class="btn btn-verify" onclick="verifySocialTask()">Verify</button>
+                </div>
+            </div>
+        </div>
 
-            <!-- Task 3: OKX Signup -->
-            <div class="task-card" data-task-id="3">
-                <div class="task-header">
-                    <span class="task-number">Task 3</span>
-                    <span class="reward-badge">Reward: 200 ROCKET</span>
-                </div>
-                <h3>Sign Up with OKX</h3>
-                <p>Create an account on OKX using our referral link.</p>
-                <div class="referral-link" id="okxLink">https://bit.ly/okxaffiliatepartner</div>
-                <div class="mt-3">
-                    <input type="text" class="verification-input" placeholder="Enter your OKX username" id="okxVerification">
-                    <button class="btn btn-verify mt-2">Verify Signup</button>
-                </div>
-                <div class="task-status" id="task3-status"></div>
-            </div>
-
-            <!-- Task 4: Blofin Deposit -->
-            <div class="task-card" data-task-id="4">
-                <div class="task-header">
-                    <span class="task-number">Task 4</span>
-                    <span class="reward-badge">Reward: 500 ROCKET</span>
-                </div>
-                <h3>Deposit $100 at Blofin</h3>
-                <p>Deposit at least 100 USDT (TRC20) into your Blofin account.</p>
-                <div class="mt-3">
-                    <input type="text" class="verification-input" placeholder="Enter TRON transaction ID (64 characters)" id="blofinDepositVerification">
-                    <small class="text-muted d-block mt-1">Transaction must be confirmed on TRON network</small>
-                    <button class="btn btn-verify mt-2">Verify Deposit</button>
-                </div>
-                <div class="task-status" id="task4-status"></div>
-            </div>
-
-            <!-- Task 5: OKX Deposit -->
-            <div class="task-card" data-task-id="5">
-                <div class="task-header">
-                    <span class="task-number">Task 5</span>
-                    <span class="reward-badge">Reward: 500 ROCKET</span>
-                </div>
-                <h3>Deposit $100 at OKX</h3>
-                <p>Deposit at least 100 USDT into your OKX account.</p>
-                <div class="mt-3">
-                    <input type="text" class="verification-input" placeholder="Enter in format: txId:amount:USDT" id="okxDepositVerification">
-                    <small class="text-muted d-block mt-1">Example: abc123:100:USDT</small>
-                    <button class="btn btn-verify mt-2">Verify Deposit</button>
-                </div>
-                <div class="task-status" id="task5-status"></div>
-            </div>
+        <!-- Claim Rewards Button -->
+        <div class="text-center mt-4 mb-5">
+            <button id="claimRewardsBtn" class="btn btn-lg btn-verify" disabled>
+                Claim Rewards
+            </button>
         </div>
     </div>
 
-    <script type="module">
-        import { walletManager } from './js/app.js';
-        import { taskManager } from './js/tasks.js';
-        import { verificationService } from './js/verification.js';
+    <!-- Error Message -->
+    <div id="errorMessage" class="alert alert-danger alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="display: none; z-index: 1050;">
+        <span class="message"></span>
+        <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+    </div>
 
-        let completedTasks = 0;
-        const REQUIRED_TASKS = 5;
-        const completedTaskIds = new Set();
+    <!-- Success Message -->
+    <div id="successMessage" class="alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="display: none; z-index: 1050;">
+        <span class="message"></span>
+        <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+    </div>
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            await walletManager.initialize();
-            await taskManager.initialize();
-            setupVerificationListeners();
-            updateTaskProgress();
-
-            async function verifyTask(taskId) {
-                if (!walletManager.isConnected()) {
-                    showError('Please connect your wallet first');
-                    return false;
-                }
-
-                if (completedTaskIds.has(taskId)) {
-                    showError('Task already completed');
-                    return false;
-                }
-
-                const taskCard = document.querySelector(`[data-task-id="${taskId}"]`);
-                const statusElement = document.getElementById(`task${taskId}-status`);
-                const verificationInput = taskCard.querySelector('.verification-input');
-                const input = verificationInput ? verificationInput.value.trim() : '';
-
-                if (!input) {
-                    showError('Please provide verification information');
-                    return false;
-                }
-
-                try {
-                    let isVerified = false;
-                    statusElement.textContent = 'Verifying...';
-                    
-                    switch(taskId) {
-                        case 1: // Social Media
-                            const [twitter, telegram] = input.split(',').map(s => s.trim());
-                            isVerified = await verificationService.verifySocialFollow(twitter, telegram);
-                            break;
-                            
-                        case 2: // Blofin Signup
-                            isVerified = await verificationService.verifyBlofinSignup(input);
-                            break;
-                            
-                        case 3: // OKX Signup
-                            isVerified = await verificationService.verifyOKXSignup(input);
-                            break;
-                            
-                        case 4: // Blofin Deposit
-                            isVerified = await verificationService.verifyBlofinDeposit(input);
-                            break;
-                            
-                        case 5: // OKX Deposit
-                            isVerified = await verificationService.verifyOKXDeposit(input);
-                            break;
-                    }
-
-                    if (isVerified) {
-                        completedTaskIds.add(taskId);
-                        completedTasks++;
-                        updateTaskProgress();
-                        
-                        // Update UI
-                        statusElement.textContent = 'Verified Successfully';
-                        statusElement.className = 'task-status text-success';
-                        taskCard.classList.add('completed');
-                        
-                        // Disable input and button
-                        verificationInput.disabled = true;
-                        taskCard.querySelector('.btn-verify').disabled = true;
-                        
-                        if (completedTasks >= REQUIRED_TASKS) {
-                            claimButton.disabled = false;
-                            claimButton.textContent = 'Claim 1000 RDOGE';
-                        }
-                        
-                        showSuccess(`Task ${taskId} verified successfully!`);
-                        return true;
-                    } else {
-                        statusElement.textContent = 'Verification Failed';
-                        statusElement.className = 'task-status text-danger';
-                        showError('Verification failed. Please check your input and try again.');
-                        return false;
-                    }
-                } catch (error) {
-                    console.error('Task verification error:', error);
-                    statusElement.textContent = 'Verification Error';
-                    statusElement.className = 'task-status text-danger';
-                    showError(error.message);
-                    return false;
-                }
-            }
-
-            function setupVerificationListeners() {
-                document.querySelectorAll('.btn-verify').forEach(button => {
-                    button.addEventListener('click', async (event) => {
-                        const taskId = event.target.closest('.task-card').getAttribute('data-task-id');
-                        await verifyTask(parseInt(taskId));
-                    });
-                });
-            }
-
-            const connectWalletBtn = document.getElementById('connectWalletBtn');
-            const walletInfo = document.querySelector('.wallet-info');
-            const walletAddress = document.getElementById('walletAddress');
-            const taskSection = document.getElementById('taskSection');
-            const claimButton = document.getElementById('claimButton');
-
-            connectWalletBtn.addEventListener('click', async () => {
-                try {
-                    await walletManager.connect();
-                    updateWalletUI();
-                } catch (error) {
-                    console.error('Error connecting wallet:', error);
-                    showError('Failed to connect wallet: ' + error.message);
-                }
-            });
-
-            document.addEventListener('walletConnectionChanged', updateWalletUI);
-
-            // Handle token claim
-            claimButton.addEventListener('click', async () => {
-                if (completedTasks < REQUIRED_TASKS) {
-                    showError('Please complete all tasks first');
-                    return;
-                }
-
-                try {
-                    await taskManager.claimTokens();
-                    claimButton.disabled = true;
-                    claimButton.textContent = 'Tokens Claimed';
-                    showSuccess('Successfully claimed 1000 RDOGE! Head to Staking page to start earning rewards.');
-                } catch (error) {
-                    console.error('Error claiming tokens:', error);
-                    showError('Failed to claim tokens: ' + error.message);
-                }
-            });
-
-            function updateTaskProgress() {
-                const tasksCompleted = document.getElementById('tasksCompleted');
-                tasksCompleted.textContent = `${completedTasks}/${REQUIRED_TASKS}`;
-                
-                if (completedTasks >= REQUIRED_TASKS) {
-                    tasksCompleted.className = 'text-success';
-                } else {
-                    tasksCompleted.className = 'text-warning';
-                }
-            }
-
-            function updateWalletUI() {
-                if (walletManager.isConnected()) {
-                    connectWalletBtn.style.display = 'none';
-                    walletInfo.style.display = 'block';
-                    walletAddress.textContent = `Connected: ${walletManager.publicKey.toString()}`;
-                    taskSection.style.display = 'block';
-                    setTimeout(() => {
-                        taskSection.style.opacity = '1';
-                        taskSection.style.transform = 'translateY(0)';
-                    }, 100);
-                } else {
-                    connectWalletBtn.style.display = 'block';
-                    walletInfo.style.display = 'none';
-                    taskSection.style.display = 'none';
-                }
-            }
-
-            function showError(message) {
-                const errorDiv = document.getElementById('errorMessage');
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-                errorDiv.className = 'alert alert-danger';
-                setTimeout(() => {
-                    errorDiv.style.display = 'none';
-                }, 5000);
-            }
-
-            function showSuccess(message) {
-                const errorDiv = document.getElementById('errorMessage');
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-                errorDiv.className = 'alert alert-success';
-                setTimeout(() => {
-                    errorDiv.style.display = 'none';
-                }, 5000);
-            }
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script type="module" src="js/tasks.js"></script>
 </body>
 </html>

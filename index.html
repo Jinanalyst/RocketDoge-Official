@@ -10,90 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --primary-color: #FF007A;
-            --bg-dark: #191B1F;
-            --bg-darker: #131517;
-            --card-bg: #212429;
-            --border-color: #2C2F36;
-            --hover-bg: #2C2F36;
-            --gradient-primary: linear-gradient(45deg, #ff6b6b, #ff8e53);
-        }
-
-        body {
-            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-            color: #ffffff;
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-        }
-
-        .navbar {
-            background: var(--bg-darker);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1rem 0;
-        }
-
-        .navbar-brand {
-            color: white;
-            font-weight: 600;
-            font-size: 1.5rem;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .navbar-toggler {
-            border-color: var(--border-color);
-            padding: 0.5rem;
-        }
-
-        .navbar-toggler:focus {
-            box-shadow: none;
-            border-color: var(--primary-color);
-        }
-
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.7)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        }
-
-        .nav-link {
-            color: rgba(255, 255, 255, 0.7) !important;
-            font-weight: 500;
-            padding: 0.5rem 1rem !important;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-link:hover,
-        .nav-link.active {
-            color: white !important;
-            background: var(--hover-bg);
-        }
-
-        .nav-link.active {
-            background: var(--primary-color);
-        }
-
-        .network-selector select {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--border-color);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-        }
-
-        .network-selector select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(255, 0, 122, 0.25);
-        }
-
-        /* Keep your existing styles for other components */
-        /* ... */
-    </style>
-
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    
     <!-- Web3 Dependencies -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="https://unpkg.com/@solana/spl-token@0.3.7/lib/index.iife.min.js"></script>
@@ -102,8 +21,20 @@
 </head>
 <body>
     <!-- Notifications -->
-    <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
-    <div id="successMessage" class="alert alert-success" style="display: none;"></div>
+    <div id="notifications" class="position-fixed top-0 end-0 p-3" style="z-index: 1050">
+        <div id="errorMessage" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+        <div id="successMessage" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
 
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg sticky-top">
@@ -124,20 +55,44 @@
                         <a class="nav-link" href="dex.html">DEX</a>
                     </li>
                 </ul>
-                <div class="network-selector">
-                    <select id="networkSelect" class="form-select">
-                        <option value="devnet">Devnet</option>
-                        <option value="mainnet" disabled>Mainnet (Coming Soon)</option>
-                    </select>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="network-selector">
+                        <select id="networkSelect" class="form-select">
+                            <option value="devnet">Devnet</option>
+                            <option value="mainnet" disabled>Mainnet (Coming Soon)</option>
+                        </select>
+                    </div>
+                    <button id="connectWalletBtn" class="btn btn-primary">Connect Wallet</button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Keep your existing content -->
-    <!-- ... -->
+    <!-- Main Content -->
+    <main class="container py-5">
+        <div id="stakingContent" class="row g-4" style="display: none;">
+            <!-- Staking content will be dynamically populated -->
+        </div>
+        
+        <div id="walletPrompt" class="text-center py-5">
+            <h2>Welcome to RocketDoge Staking</h2>
+            <p class="lead">Connect your wallet to start staking</p>
+            <button class="btn btn-primary btn-lg mt-3" onclick="document.getElementById('connectWalletBtn').click()">
+                Connect Wallet
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3">
+        <div class="container text-center">
+            <span class="text-muted">© 2024 RocketDoge. All rights reserved.</span>
+        </div>
+    </footer>
 
     <!-- Scripts -->
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/staking.js"></script>
     <script type="module">
         import { walletManager } from './js/app.js';
         import { stakingManager } from './js/staking.js';

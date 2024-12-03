@@ -1068,3 +1068,283 @@ document.getElementById('swapDirection').addEventListener('click', () => {
 
     handleSwapInputChange();
 });
+
+import { walletManager } from './wallet-manager.js';
+import { config } from './config.js';
+
+class DexManager {
+    constructor() {
+        this.connection = null;
+        this.program = null;
+        this.market = null;
+        this.initialized = false;
+    }
+
+    async initialize() {
+        try {
+            // Initialize connection
+            this.connection = walletManager.getConnection();
+            
+            // Initialize DEX program
+            this.program = new solanaWeb3.Program(
+                config.DEX_IDL,
+                config.DEX_PROGRAM_ID,
+                { connection: this.connection }
+            );
+
+            // Load market data
+            await this.loadMarket();
+            
+            this.initialized = true;
+            return true;
+        } catch (error) {
+            console.error('Failed to initialize DEX:', error);
+            return false;
+        }
+    }
+
+    async loadMarket() {
+        try {
+            // Load market data based on the current network
+            const marketAddress = config.NETWORKS[walletManager.getNetwork()].marketAddress;
+            this.market = await this.program.account.market.fetch(marketAddress);
+            
+            // Update UI with market data
+            this.updateMarketUI();
+        } catch (error) {
+            console.error('Failed to load market:', error);
+            throw error;
+        }
+    }
+
+    updateMarketUI() {
+        if (!this.market) return;
+
+        // Update price
+        const priceElement = document.getElementById('currentPrice');
+        if (priceElement) {
+            priceElement.textContent = `${this.market.price} SOL`;
+        }
+
+        // Update liquidity
+        const liquidityElement = document.getElementById('totalLiquidity');
+        if (liquidityElement) {
+            liquidityElement.textContent = `${this.market.liquidity} RDOGE`;
+        }
+
+        // Update volume
+        const volumeElement = document.getElementById('volume24h');
+        if (volumeElement) {
+            volumeElement.textContent = `${this.market.volume24h} SOL`;
+        }
+    }
+
+    async swap(inputAmount, inputToken, outputToken) {
+        if (!walletManager.isConnected()) {
+            throw new Error('Please connect your wallet first');
+        }
+
+        try {
+            const provider = walletManager.getProvider();
+            
+            // Create swap instruction
+            const swapIx = await this.program.methods
+                .swap(new BN(inputAmount))
+                .accounts({
+                    market: this.market.publicKey,
+                    userAccount: provider.publicKey,
+                    inputTokenAccount: await this.getTokenAccount(inputToken),
+                    outputTokenAccount: await this.getTokenAccount(outputToken),
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                })
+                .instruction();
+
+            // Create and send transaction
+            const transaction = new solanaWeb3.Transaction().add(swapIx);
+            const signature = await provider.signAndSendTransaction(transaction);
+            
+            // Confirm transaction
+            await this.connection.confirmTransaction(signature);
+            
+            // Update UI
+            await this.loadMarket();
+            return signature;
+        } catch (error) {
+            console.error('Swap failed:', error);
+            throw error;
+        }
+    }
+
+    async addLiquidity(tokenAmount) {
+        if (!walletManager.isConnected()) {
+            throw new Error('Please connect your wallet first');
+        }
+
+        try {
+            const provider = walletManager.getProvider();
+            
+            // Create add liquidity instruction
+            const addLiquidityIx = await this.program.methods
+                .addLiquidity(new BN(tokenAmount))
+                .accounts({
+                    market: this.market.publicKey,
+                    userAccount: provider.publicKey,
+                    tokenAccount: await this.getTokenAccount(config.STAKING_TOKEN),
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                })
+                .instruction();
+
+            // Create and send transaction
+            const transaction = new solanaWeb3.Transaction().add(addLiquidityIx);
+            const signature = await provider.signAndSendTransaction(transaction);
+            
+            // Confirm transaction
+            await this.connection.confirmTransaction(signature);
+            
+            // Update UI
+            await this.loadMarket();
+            return signature;
+        } catch (error) {
+            console.error('Add liquidity failed:', error);
+            throw error;
+        }
+    }
+
+    async removeLiquidity(tokenAmount) {
+        if (!walletManager.isConnected()) {
+            throw new Error('Please connect your wallet first');
+        }
+
+        try {
+            const provider = walletManager.getProvider();
+            
+            // Create remove liquidity instruction
+            const removeLiquidityIx = await this.program.methods
+                .removeLiquidity(new BN(tokenAmount))
+                .accounts({
+                    market: this.market.publicKey,
+                    userAccount: provider.publicKey,
+                    tokenAccount: await this.getTokenAccount(config.STAKING_TOKEN),
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                })
+                .instruction();
+
+            // Create and send transaction
+            const transaction = new solanaWeb3.Transaction().add(removeLiquidityIx);
+            const signature = await provider.signAndSendTransaction(transaction);
+            
+            // Confirm transaction
+            await this.connection.confirmTransaction(signature);
+            
+            // Update UI
+            await this.loadMarket();
+            return signature;
+        } catch (error) {
+            console.error('Remove liquidity failed:', error);
+            throw error;
+        }
+    }
+
+    async getTokenAccount(mint) {
+        try {
+            const provider = walletManager.getProvider();
+            return await splToken.Token.getAssociatedTokenAddress(
+                new solanaWeb3.PublicKey(mint),
+                provider.publicKey
+            );
+        } catch (error) {
+            console.error('Failed to get token account:', error);
+            throw error;
+        }
+    }
+}
+
+// Create DEX manager instance
+export const dexManager = new DexManager();
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Initialize wallet manager first
+        await walletManager.initialize();
+        
+        // Initialize DEX manager
+        await dexManager.initialize();
+        
+        // Setup event listeners
+        setupEventListeners();
+    } catch (error) {
+        console.error('Failed to initialize DEX page:', error);
+        showError('Failed to initialize DEX. Please refresh the page.');
+    }
+});
+
+function setupEventListeners() {
+    // Swap form
+    const swapForm = document.getElementById('swapForm');
+    if (swapForm) {
+        swapForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('swapAmount').value;
+            const inputToken = document.getElementById('inputToken').value;
+            const outputToken = document.getElementById('outputToken').value;
+            
+            try {
+                await dexManager.swap(amount, inputToken, outputToken);
+                showSuccess('Swap successful!');
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+    }
+
+    // Add liquidity form
+    const addLiquidityForm = document.getElementById('addLiquidityForm');
+    if (addLiquidityForm) {
+        addLiquidityForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('liquidityAmount').value;
+            
+            try {
+                await dexManager.addLiquidity(amount);
+                showSuccess('Liquidity added successfully!');
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+    }
+
+    // Remove liquidity form
+    const removeLiquidityForm = document.getElementById('removeLiquidityForm');
+    if (removeLiquidityForm) {
+        removeLiquidityForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('withdrawAmount').value;
+            
+            try {
+                await dexManager.removeLiquidity(amount);
+                showSuccess('Liquidity removed successfully!');
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+    }
+}
+
+function showError(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    if (errorDiv) {
+        const messageSpan = errorDiv.querySelector('.message');
+        messageSpan.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+}
+
+function showSuccess(message) {
+    const successDiv = document.getElementById('successMessage');
+    if (successDiv) {
+        const messageSpan = successDiv.querySelector('.message');
+        messageSpan.textContent = message;
+        successDiv.style.display = 'block';
+    }
+}

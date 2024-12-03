@@ -4,13 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RocketDoge Staking Platform</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -31,26 +27,26 @@
     </div>
 
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg sticky-top">
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="#">RocketDoge</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="index.html">Home</a>
+                        <a class="nav-link active" href="#">Stake</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="tasks.html">Tasks</a>
+                        <a class="nav-link" href="#">Tasks</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="dex.html">DEX</a>
+                        <a class="nav-link" href="#">DEX</a>
                     </li>
                 </ul>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="network-selector">
+                <div class="d-flex align-items-center">
+                    <div class="network-selector me-3">
                         <select id="networkSelect" class="form-select">
                             <option value="devnet">Devnet</option>
                             <option value="mainnet" disabled>Mainnet (Coming Soon)</option>
@@ -63,101 +59,90 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="container py-5">
-        <!-- Staking Overview -->
-        <div class="row mb-5">
-            <div class="col-12">
-                <div class="card bg-dark border-light">
-                    <div class="card-body text-center">
-                        <h2 class="card-title mb-4">RocketDoge Staking</h2>
-                        <div class="row g-4">
-                            <div class="col-md-4">
-                                <div class="stat-card p-3">
-                                    <h5>Current APR</h5>
-                                    <p class="display-6 mb-0" id="currentAPY">120%</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="stat-card p-3">
-                                    <h5>Total Value Locked</h5>
-                                    <p class="display-6 mb-0"><span id="totalValueLocked">0</span> RDOGE</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="stat-card p-3">
-                                    <h5>Your Balance</h5>
-                                    <p class="display-6 mb-0"><span id="tokenBalance">0</span> RDOGE</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Staking Actions -->
-        <div class="row g-4" id="stakingContent" style="display: none;">
-            <!-- Staking Input -->
-            <div class="col-md-6">
-                <div class="card bg-dark border-light h-100">
-                    <div class="card-body">
-                        <h4 class="card-title mb-4">Stake RDOGE</h4>
-                        <div class="mb-4">
-                            <label for="stakeAmount" class="form-label">Amount to Stake</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control bg-dark text-light" id="stakeAmount" placeholder="0.00" min="0" step="0.01">
-                                <button class="btn btn-outline-light" type="button" onclick="document.getElementById('stakeAmount').value = document.getElementById('tokenBalance').textContent">MAX</button>
-                            </div>
-                            <small class="text-muted">Minimum staking period: 24 hours</small>
-                        </div>
-                        <button class="btn btn-primary w-100" onclick="stakingManager.handleStake()">Stake Tokens</button>
-                    </div>
-                </div>
-            </div>
-
+    <main class="container py-4">
+        <div id="stakingContent" style="display: none;">
             <!-- Staking Stats -->
-            <div class="col-md-6">
-                <div class="card bg-dark border-light h-100">
-                    <div class="card-body">
-                        <h4 class="card-title mb-4">Your Staking Stats</h4>
-                        <div class="mb-4">
-                            <h5>Total Staked</h5>
-                            <p class="display-6 mb-4"><span id="stakedAmount">0.00</span> RDOGE</p>
-                            
-                            <h5>Rewards Earned</h5>
-                            <p class="display-6 mb-4"><span id="rewardsEarned">0.00</span> RDOGE</p>
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h5>Current APR</h5>
+                        <div class="value">120%</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h5>Total Value Locked</h5>
+                        <div class="value"><span id="totalValueLocked">0</span> RDOGE</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h5>Your Balance</h5>
+                        <div class="value"><span id="tokenBalance">0</span> RDOGE</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staking Actions -->
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4>Stake RDOGE</h4>
+                            <div class="mb-4">
+                                <label for="stakeAmount" class="form-label">Amount to Stake</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="stakeAmount" placeholder="0.00" min="0">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('stakeAmount').value = document.getElementById('tokenBalance').textContent">MAX</button>
+                                </div>
+                                <small class="text-muted">Minimum staking period: 24 hours</small>
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="stakingManager.handleStake()">Stake Tokens</button>
                         </div>
-                        <button class="btn btn-success w-100" onclick="stakingManager.handleClaim()">Claim Rewards</button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4>Your Staking Stats</h4>
+                            <div class="mb-4">
+                                <div class="stat-row">
+                                    <h5>Total Staked</h5>
+                                    <div class="value"><span id="stakedAmount">0.00</span> RDOGE</div>
+                                </div>
+                                <div class="stat-row mt-3">
+                                    <h5>Rewards Earned</h5>
+                                    <div class="value"><span id="rewardsEarned">0.00</span> RDOGE</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="stakingManager.handleClaim()">Claim Rewards</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Wallet Connection Prompt -->
-        <div id="walletPrompt" class="text-center py-5">
+        <div id="walletPrompt" class="text-center">
             <h2>Welcome to RocketDoge Staking</h2>
-            <p class="lead">Connect your wallet to start staking</p>
-            <div class="mt-4">
-                <button class="btn btn-primary btn-lg" onclick="document.getElementById('connectWalletBtn').click()">
-                    Connect Wallet
-                </button>
-            </div>
+            <p class="lead mb-4">Connect your wallet to start staking</p>
+            <button class="btn btn-primary btn-lg" onclick="document.getElementById('connectWalletBtn').click()">
+                Connect Wallet
+            </button>
         </div>
     </main>
 
     <!-- Footer -->
-    <footer class="footer mt-auto py-3">
+    <footer class="footer py-3">
         <div class="container text-center">
             <span class="text-muted">© 2024 RocketDoge. All rights reserved.</span>
         </div>
     </footer>
 
-    <!-- Web3 Dependencies -->
+    <!-- Scripts -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="https://unpkg.com/@solana/spl-token@0.3.7/lib/index.iife.min.js"></script>
-    <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom Scripts -->
     <script type="module" src="js/app.js"></script>
     <script type="module" src="js/staking.js"></script>
 </body>

@@ -1,9 +1,10 @@
 // Solana connection and program variables
 let connection;
 let wallet;
+const STAKING_PROGRAM_ID = '2NYZ6qZqng3nAvpetdPQxGSn3yrdif7PPCmHZu281iGB';
 const STAKING_TOKEN = '255Tez4EL5Kv36fMwbWCZDMkPCGLZRtM46qLyxWaTZaa'; // RocketDoge devnet token
-const REWARDS_PER_EPOCH = 100; // Rewards per epoch in tokens
-const EPOCH_DURATION = 24 * 60 * 60; // 24 hours in seconds
+const REWARD_RATE = 10; // 10% APY
+const LOCK_PERIOD = 24 * 60 * 60; // 24 hours in seconds
 const TOKEN_DECIMALS = 9;
 
 // Token ratio configuration (5:1 devnet to mainnet)
@@ -32,11 +33,18 @@ function formatTokenAmount(devnetAmount) {
 }
 
 // Initialize Solana connection to devnet
-function initializeSolana() {
-    connection = new solanaWeb3.Connection(
-        solanaWeb3.clusterApiUrl('devnet'),
-        'confirmed'
-    );
+async function initializeSolana() {
+    try {
+        connection = new solanaWeb3.Connection(
+            solanaWeb3.clusterApiUrl('devnet'),
+            'confirmed'
+        );
+        console.log('Connected to Solana devnet');
+        return true;
+    } catch (error) {
+        console.error('Failed to connect to Solana:', error);
+        return false;
+    }
 }
 
 // Check if Phantom Wallet is installed
@@ -50,6 +58,248 @@ const getProvider = () => {
     }
     window.open('https://phantom.app/', '_blank');
 };
+
+// Connect wallet and initialize pool if needed
+async function connectWallet() {
+    try {
+        const provider = getProvider();
+        if (provider) {
+            const response = await provider.connect();
+            wallet = response.publicKey;
+            console.log('Connected to wallet:', wallet.toString());
+
+            // Check if pool is initialized
+            const poolAccount = await getStakingPoolAccount();
+            if (!poolAccount) {
+                await initializePool();
+            }
+
+            await updateUI();
+            updateWalletUI(wallet.toString());
+        }
+    } catch (err) {
+        console.error('Error connecting wallet:', err);
+        showError('Failed to connect wallet');
+    }
+}
+
+// Initialize staking pool
+async function initializePool() {
+    try {
+        const provider = getProvider();
+        if (!provider || !wallet) return;
+
+        const transaction = new solanaWeb3.Transaction();
+        
+        // Create pool token account if needed
+        const poolTokenAccount = await createAssociatedTokenAccountIfNeeded(
+            wallet,
+            new solanaWeb3.PublicKey(STAKING_TOKEN)
+        );
+
+        // Initialize pool instruction
+        const initializePoolIx = await program.methods
+            .initializePool(new BN(REWARD_RATE), new BN(LOCK_PERIOD))
+            .accounts({
+                stakingPoolAccount: await getStakingPoolAddress(),
+                stakingPoolTokenAccount: poolTokenAccount,
+                authority: wallet,
+                systemProgram: solanaWeb3.SystemProgram.programId,
+            })
+            .instruction();
+
+        transaction.add(initializePoolIx);
+
+        // Send and confirm transaction
+        const signature = await provider.signAndSendTransaction(transaction);
+        await connection.confirmTransaction(signature.signature);
+        console.log('Pool initialized');
+    } catch (error) {
+        console.error('Error initializing pool:', error);
+        showError('Failed to initialize staking pool');
+    }
+}
+
+// Stake tokens
+async function stakeTokens() {
+    try {
+        const amount = document.getElementById('stakeAmount').value;
+        if (!amount || amount <= 0) {
+            showError('Please enter a valid amount');
+            return;
+        }
+
+        const provider = getProvider();
+        if (!provider || !wallet) {
+            showError('Please connect your wallet first');
+            return;
+        }
+
+        const transaction = new solanaWeb3.Transaction();
+        
+        // Get necessary accounts
+        const userTokenAccount = await getAssociatedTokenAddress(
+            new solanaWeb3.PublicKey(STAKING_TOKEN),
+            wallet
+        );
+        
+        const poolTokenAccount = await getAssociatedTokenAddress(
+            new solanaWeb3.PublicKey(STAKING_TOKEN),
+            await getStakingPoolAddress()
+        );
+
+        const userStakeAccount = await getUserStakeAddress(wallet);
+
+        // Create stake instruction
+        const stakeIx = await program.methods
+            .stakeDeposit(new BN(amount))
+            .accounts({
+                userAccount: userStakeAccount,
+                stakingPoolAccount: await getStakingPoolAddress(),
+                userTokenAccount: userTokenAccount,
+                stakingPoolTokenAccount: poolTokenAccount,
+                user: wallet,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                systemProgram: solanaWeb3.SystemProgram.programId,
+            })
+            .instruction();
+
+        transaction.add(stakeIx);
+
+        // Send and confirm transaction
+        const signature = await provider.signAndSendTransaction(transaction);
+        await connection.confirmTransaction(signature.signature);
+        
+        console.log('Stake successful');
+        await updateUI();
+    } catch (error) {
+        console.error('Error staking tokens:', error);
+        showError('Failed to stake tokens: ' + error.message);
+    }
+}
+
+// Unstake tokens
+async function unstake() {
+    try {
+        const amount = document.getElementById('unstakeAmount').value;
+        if (!amount || amount <= 0) {
+            showError('Please enter a valid amount');
+            return;
+        }
+
+        const provider = getProvider();
+        if (!provider || !wallet) {
+            showError('Please connect your wallet first');
+            return;
+        }
+
+        const transaction = new solanaWeb3.Transaction();
+        
+        // Get necessary accounts
+        const userTokenAccount = await getAssociatedTokenAddress(
+            new solanaWeb3.PublicKey(STAKING_TOKEN),
+            wallet
+        );
+        
+        const poolTokenAccount = await getAssociatedTokenAddress(
+            new solanaWeb3.PublicKey(STAKING_TOKEN),
+            await getStakingPoolAddress()
+        );
+
+        const userStakeAccount = await getUserStakeAddress(wallet);
+
+        // Create unstake instruction
+        const unstakeIx = await program.methods
+            .stakeWithdraw(new BN(amount))
+            .accounts({
+                userAccount: userStakeAccount,
+                stakingPoolAccount: await getStakingPoolAddress(),
+                userTokenAccount: userTokenAccount,
+                stakingPoolTokenAccount: poolTokenAccount,
+                user: wallet,
+                tokenProgram: TOKEN_PROGRAM_ID,
+            })
+            .instruction();
+
+        transaction.add(unstakeIx);
+
+        // Send and confirm transaction
+        const signature = await provider.signAndSendTransaction(transaction);
+        await connection.confirmTransaction(signature.signature);
+        
+        console.log('Unstake successful');
+        await updateUI();
+    } catch (error) {
+        console.error('Error unstaking tokens:', error);
+        showError('Failed to unstake tokens: ' + error.message);
+    }
+}
+
+// Helper function to get user stake account address
+async function getUserStakeAddress(walletAddress) {
+    return await solanaWeb3.PublicKey.findProgramAddress(
+        [
+            Buffer.from('user-stake'),
+            walletAddress.toBuffer()
+        ],
+        new solanaWeb3.PublicKey(STAKING_PROGRAM_ID)
+    );
+}
+
+// Helper function to get staking pool address
+async function getStakingPoolAddress() {
+    return await solanaWeb3.PublicKey.findProgramAddress(
+        [Buffer.from('staking-pool')],
+        new solanaWeb3.PublicKey(STAKING_PROGRAM_ID)
+    );
+}
+
+// Update UI with current data
+async function updateUI() {
+    try {
+        if (!wallet) return;
+
+        const userStakeAccount = await program.account.userAccount.fetch(
+            await getUserStakeAddress(wallet)
+        );
+
+        const poolAccount = await program.account.stakingPoolAccount.fetch(
+            await getStakingPoolAddress()
+        );
+
+        // Update staked amount
+        document.getElementById('stakedAmount').textContent = 
+            (userStakeAccount.balance / Math.pow(10, TOKEN_DECIMALS)).toFixed(2);
+
+        // Update rewards
+        document.getElementById('rewards').textContent = 
+            (userStakeAccount.rewardsClaimed / Math.pow(10, TOKEN_DECIMALS)).toFixed(2);
+
+        // Update total staked
+        document.getElementById('totalStaked').textContent = 
+            (poolAccount.totalStaked / Math.pow(10, TOKEN_DECIMALS)).toFixed(2);
+
+        // Update APY
+        document.getElementById('currentAPY').textContent = 
+            (poolAccount.rewardRate / 100).toFixed(2) + '%';
+
+        // Update lock period
+        document.getElementById('lockPeriod').textContent = 
+            (poolAccount.lockPeriod / (60 * 60 * 24)).toFixed(0) + ' days';
+    } catch (error) {
+        console.error('Error updating UI:', error);
+    }
+}
+
+// Show error message
+function showError(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 5000);
+}
 
 // Update wallet button and display wallet address
 function updateWalletUI(walletAddress = null) {
@@ -84,273 +334,6 @@ function updateWalletUI(walletAddress = null) {
     }
 }
 
-// Connect to Phantom Wallet
-async function connectWallet() {
-    try {
-        const provider = getProvider();
-        
-        if (provider) {
-            try {
-                const response = await provider.connect();
-                wallet = response.publicKey;
-                console.log('Connected with Public Key:', wallet.toString());
-                
-                // Update UI after successful connection
-                updateWalletUI(wallet.toString());
-                updateUI();
-                
-                // Listen for wallet disconnection
-                provider.on('disconnect', () => {
-                    console.log('Wallet disconnected');
-                    wallet = null;
-                    updateWalletUI();
-                });
-                
-                return;
-            } catch (error) {
-                console.error('User rejected the connection:', error);
-                updateWalletUI();
-            }
-        }
-    } catch (error) {
-        console.error('Error connecting to Phantom wallet:', error);
-        alert('Failed to connect wallet. Please try again.');
-        updateWalletUI();
-    }
-}
-
-// Update UI with user's data
-async function updateUI() {
-    try {
-        if (!wallet) {
-            console.log('Wallet not connected');
-            return;
-        }
-
-        // Get token balance
-        const tokenBalance = await getTokenBalance();
-        const formattedBalance = formatTokenAmount(tokenBalance);
-        document.getElementById('userBalance').textContent = `${formattedBalance.devnet} RDOGE (${formattedBalance.mainnet} mainnet)`;
-        
-        // Get staked amount
-        const stakedAmount = await getStakedAmount();
-        const formattedStaked = formatTokenAmount(stakedAmount);
-        document.getElementById('stakedAmount').textContent = `${formattedStaked.devnet} RDOGE (${formattedStaked.mainnet} mainnet)`;
-        
-        // Get rewards earned
-        const rewards = await getRewards();
-        const formattedRewards = formatTokenAmount(rewards);
-        document.getElementById('rewardsEarned').textContent = `${formattedRewards.devnet} RDOGE (${formattedRewards.mainnet} mainnet)`;
-        
-        // Update staking details
-        updateStakingDetails();
-    } catch (error) {
-        console.error('Error updating UI:', error);
-    }
-}
-
-// Get token balance
-async function getTokenBalance() {
-    try {
-        const tokenAccount = await connection.getParsedTokenAccountsByOwner(wallet, {
-            mint: new solanaWeb3.PublicKey(STAKING_TOKEN)
-        });
-        
-        if (tokenAccount.value.length > 0) {
-            const balance = tokenAccount.value[0].account.data.parsed.info.tokenAmount.uiAmount;
-            return balance;
-        }
-        return 0;
-    } catch (error) {
-        console.error('Error getting token balance:', error);
-        return 0;
-    }
-}
-
-// Calculate rewards based on staked amount and time
-function calculateRewards(stakedAmount, stakingDuration) {
-    const epochs = stakingDuration / EPOCH_DURATION;
-    return (stakedAmount * REWARDS_PER_EPOCH * epochs) / 100; // 100% APR base rate
-}
-
-// Stake tokens
-async function stakeTokens() {
-    try {
-        const amount = document.getElementById('stakeAmount').value;
-        if (!amount || amount <= 0) {
-            alert('Please enter a valid amount to stake');
-            return;
-        }
-
-        // Convert input amount considering decimals
-        const stakingAmount = amount * Math.pow(10, TOKEN_DECIMALS);
-        
-        // Get the associated token account
-        const stakingTokenAccount = await createAssociatedTokenAccountIfNeeded(
-            wallet,
-            STAKING_TOKEN
-        );
-
-        // Create staking instruction
-        const stakingInstruction = new solanaWeb3.TransactionInstruction({
-            keys: [
-                { pubkey: wallet, isSigner: true, isWritable: true },
-                { pubkey: stakingTokenAccount, isSigner: false, isWritable: true },
-                { pubkey: solanaWeb3.SystemProgram.programId, isSigner: false, isWritable: false },
-                { pubkey: solanaWeb3.SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
-                { pubkey: solanaWeb3.SYSVAR_CLOCK_PUBKEY, isSigner: false, isWritable: false },
-            ],
-            programId: new solanaWeb3.PublicKey(STAKING_TOKEN),
-            data: Buffer.from([
-                1, // Instruction index for stake
-                ...new Uint8Array(new BigUint64Array([BigInt(stakingAmount)]).buffer)
-            ])
-        });
-
-        const transaction = new solanaWeb3.Transaction().add(stakingInstruction);
-        
-        const provider = getProvider();
-        const signature = await provider.signAndSendTransaction(transaction);
-        await connection.confirmTransaction(signature.signature);
-        
-        alert('Staking successful! Your tokens are now earning rewards.');
-        updateUI();
-    } catch (error) {
-        console.error('Error staking tokens:', error);
-        alert('Failed to stake tokens. Please try again.');
-    }
-}
-
-// Unstake tokens
-async function unstake(stakeId) {
-    try {
-        const stakingTokenAccount = await createAssociatedTokenAccountIfNeeded(
-            wallet,
-            STAKING_TOKEN
-        );
-
-        // Create unstaking instruction
-        const unstakingInstruction = new solanaWeb3.TransactionInstruction({
-            keys: [
-                { pubkey: wallet, isSigner: true, isWritable: true },
-                { pubkey: stakingTokenAccount, isSigner: false, isWritable: true },
-                { pubkey: solanaWeb3.SystemProgram.programId, isSigner: false, isWritable: false },
-                { pubkey: solanaWeb3.SYSVAR_CLOCK_PUBKEY, isSigner: false, isWritable: false },
-            ],
-            programId: new solanaWeb3.PublicKey(STAKING_TOKEN),
-            data: Buffer.from([
-                2, // Instruction index for unstake
-                ...new Uint8Array(new BigUint64Array([BigInt(stakeId)]).buffer)
-            ])
-        });
-
-        const transaction = new solanaWeb3.Transaction().add(unstakingInstruction);
-        
-        const provider = getProvider();
-        const signature = await provider.signAndSendTransaction(transaction);
-        await connection.confirmTransaction(signature.signature);
-        
-        alert('Unstaking successful! Your tokens and rewards have been returned.');
-        updateUI();
-    } catch (error) {
-        console.error('Error unstaking tokens:', error);
-        alert('Failed to unstake tokens. Please try again.');
-    }
-}
-
-// Get staked amount
-async function getStakedAmount() {
-    try {
-        const stakingAccount = await connection.getAccountInfo(
-            await getStakingAccountAddress(wallet)
-        );
-
-        if (!stakingAccount) return 0;
-
-        // Parse the staking account data to get staked amount
-        const stakedAmount = stakingAccount.data.readBigUInt64LE(8) / BigInt(Math.pow(10, TOKEN_DECIMALS));
-        return Number(stakedAmount);
-    } catch (error) {
-        console.error('Error getting staked amount:', error);
-        return 0;
-    }
-}
-
-// Get rewards
-async function getRewards() {
-    try {
-        const stakingAccount = await connection.getAccountInfo(
-            await getStakingAccountAddress(wallet)
-        );
-
-        if (!stakingAccount) return 0;
-
-        // Get staking timestamp and amount
-        const stakingTimestamp = stakingAccount.data.readBigUInt64LE(0);
-        const stakedAmount = stakingAccount.data.readBigUInt64LE(8);
-        
-        // Calculate duration in seconds
-        const currentTime = BigInt(Math.floor(Date.now() / 1000));
-        const stakingDuration = Number(currentTime - stakingTimestamp);
-        
-        // Calculate rewards
-        return calculateRewards(
-            Number(stakedAmount) / Math.pow(10, TOKEN_DECIMALS),
-            stakingDuration
-        );
-    } catch (error) {
-        console.error('Error getting rewards:', error);
-        return 0;
-    }
-}
-
-// Helper function to get staking account address
-async function getStakingAccountAddress(walletAddress) {
-    const seed = Buffer.from('staking');
-    return solanaWeb3.PublicKey.createWithSeed(
-        walletAddress,
-        seed.toString(),
-        new solanaWeb3.PublicKey(STAKING_TOKEN)
-    );
-}
-
-// Create associated token account if it doesn't exist
-async function createAssociatedTokenAccountIfNeeded(wallet, tokenMint) {
-    try {
-        const associatedTokenAddress = await solanaWeb3.Token.getAssociatedTokenAddress(
-            new solanaWeb3.AssociatedTokenProgram.ASSOCIATED_TOKEN_PROGRAM_ID,
-            new solanaWeb3.Token.TOKEN_PROGRAM_ID,
-            new solanaWeb3.PublicKey(tokenMint),
-            wallet
-        );
-
-        // Check if the account exists
-        const account = await connection.getAccountInfo(associatedTokenAddress);
-        
-        if (!account) {
-            const transaction = new solanaWeb3.Transaction().add(
-                solanaWeb3.Token.createAssociatedTokenAccountInstruction(
-                    new solanaWeb3.AssociatedTokenProgram.ASSOCIATED_TOKEN_PROGRAM_ID,
-                    new solanaWeb3.Token.TOKEN_PROGRAM_ID,
-                    new solanaWeb3.PublicKey(tokenMint),
-                    associatedTokenAddress,
-                    wallet,
-                    wallet
-                )
-            );
-
-            const provider = getProvider();
-            const signature = await provider.signAndSendTransaction(transaction);
-            await connection.confirmTransaction(signature.signature);
-        }
-
-        return associatedTokenAddress;
-    } catch (error) {
-        console.error('Error creating associated token account:', error);
-        throw error;
-    }
-}
-
 // Distribute devnet tokens
 async function distributeDevnetTokens() {
     try {
@@ -366,7 +349,7 @@ async function distributeDevnetTokens() {
         // Create associated token account if needed
         const associatedTokenAddress = await createAssociatedTokenAccountIfNeeded(
             wallet,
-            STAKING_TOKEN
+            new solanaWeb3.PublicKey(STAKING_TOKEN)
         );
 
         // Request airdrop from your distribution server or contract
@@ -402,52 +385,19 @@ async function distributeDevnetTokens() {
     }
 }
 
-// Update staking details table
-async function updateStakingDetails() {
-    try {
-        // Implement getting staking details from your program
-        const tableBody = document.getElementById('stakingDetails');
-        tableBody.innerHTML = '';
-        
-        // Example row structure with ratio conversion:
-        /*
-        stakingInfo.forEach(info => {
-            const formattedAmount = formatTokenAmount(info.amount);
-            const formattedReward = formatTokenAmount(info.expectedReward);
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${formattedAmount.devnet} RDOGE (${formattedAmount.mainnet} mainnet)</td>
-                <td>${new Date(info.startTime * 1000).toLocaleDateString()}</td>
-                <td>${new Date(info.endTime * 1000).toLocaleDateString()}</td>
-                <td>${formattedReward.devnet} RDOGE (${formattedReward.mainnet} mainnet)</td>
-                <td>${info.isActive ? 'Active' : 'Ended'}</td>
-                <td>
-                    ${info.isActive ? 
-                        `<button class="btn btn-sm btn-primary" onclick="unstake('${info.stakeId}')">Unstake</button>` :
-                        'Completed'}
-                </td>
-            `;
-            tableBody.appendChild(row);
-        });
-        */
-    } catch (error) {
-        console.error('Error updating staking details:', error);
+// Initialize
+window.onload = async function() {
+    await initializeSolana();
+    const provider = getProvider();
+    if (provider?.isConnected) {
+        wallet = provider.publicKey;
+        await updateUI();
+        updateWalletUI(wallet.toString());
     }
-}
+};
 
 // Event listeners
 document.getElementById('walletBtn').addEventListener('click', connectWallet);
 document.getElementById('airdropBtn').addEventListener('click', distributeDevnetTokens);
 document.getElementById('stakeButton').addEventListener('click', stakeTokens);
-
-// Initialize Solana connection on page load
-window.addEventListener('load', () => {
-    initializeSolana();
-    updateWalletUI();
-    
-    // Auto-connect if wallet is already authorized
-    const provider = getProvider();
-    if (provider && provider.isConnected) {
-        connectWallet();
-    }
-});
+document.getElementById('unstakeButton').addEventListener('click', unstake);

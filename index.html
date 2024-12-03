@@ -147,101 +147,86 @@
 <body>
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <h3>RocketDoge Platform</h3>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
-                <div class="navbar-nav">
-                    <a class="nav-link active" href="index.html">Home</a>
-                    <a class="nav-link" href="tasks.html">Tasks</a>
-                    <a class="nav-link" href="dex.html">DEX</a>
-                    <a class="nav-link" href="pools.html">Pools</a>
-                </div>
-            </div>
+            <h3>RocketDoge Staking</h3>
+            <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
         </div>
     </nav>
 
-    <div class="container">
-        <div id="walletSection" class="text-center mb-4">
-            <button id="walletBtn" class="wallet-button">Connect Wallet</button>
-            <div class="wallet-info" style="display: none;">
-                <div class="wallet-address" id="walletAddress"></div>
-            </div>
-        </div>
+    <div class="container mt-4">
+        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
 
-        <div class="page-title">
-            <h1>RocketDoge Staking Platform</h1>
-            <p>Stake your RDOGE tokens and earn rewards</p>
-            <p class="text-warning mb-4">Devnet Testing Mode: 5 RDOGE = 1 Mainnet RDOGE</p>
-        </div>
-
-        <div class="staking-interface" style="display: none;">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card stats-card">
-                        <h4>Your Balance</h4>
-                        <div class="stats-value">
-                            <span id="userBalance">0</span> RDOGE
+        <div class="row">
+            <!-- Staking Stats -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Staking Stats</h5>
+                        <div class="stat-item">
+                            <span class="label">Total Staked:</span>
+                            <span id="totalStaked">0</span> RDOGE
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Current APY:</span>
+                            <span id="currentAPY">0%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Lock Period:</span>
+                            <span id="lockPeriod">0</span>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card stats-card">
-                        <h4>Staked Amount</h4>
-                        <div class="stats-value">
+            </div>
+
+            <!-- User Stats -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Your Stats</h5>
+                        <div class="stat-item">
+                            <span class="label">Staked Amount:</span>
                             <span id="stakedAmount">0</span> RDOGE
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card stats-card">
-                        <h4>Rewards Earned</h4>
-                        <div class="stats-value">
-                            <span id="rewardsEarned">0</span> RDOGE
+                        <div class="stat-item">
+                            <span class="label">Rewards Earned:</span>
+                            <span id="rewards">0</span> RDOGE
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card mt-4">
-                <h3 class="mb-4">Stake Your Tokens</h3>
-                <div class="input-group mb-3">
-                    <input type="number" class="form-control" id="stakeAmount" placeholder="Enter mainnet amount to stake">
-                    <button class="btn btn-primary" type="button" id="stakeButton">Stake</button>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <div>APY: <span class="text-warning">120%</span></div>
-                    <div>Lock Period: <span class="text-warning">30 days</span></div>
-                    <div>Devnet Ratio: <span class="text-warning">5:1</span></div>
-                </div>
-            </div>
+            <!-- Actions -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Actions</h5>
+                        
+                        <!-- Stake Form -->
+                        <div class="mb-3">
+                            <label for="stakeAmount" class="form-label">Stake Amount</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="stakeAmount" placeholder="0">
+                                <button class="btn btn-primary" id="stakeButton">Stake</button>
+                            </div>
+                        </div>
 
-            <div class="card mt-4">
-                <h3 class="mb-4">Your Staking Details</h3>
-                <div class="table-responsive">
-                    <table class="table table-dark">
-                        <thead>
-                            <tr>
-                                <th>Staked Amount</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Expected Reward</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stakingDetails">
-                            <!-- Staking details will be populated here -->
-                        </tbody>
-                    </table>
+                        <!-- Unstake Form -->
+                        <div class="mb-3">
+                            <label for="unstakeAmount" class="form-label">Unstake Amount</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="unstakeAmount" placeholder="0">
+                                <button class="btn btn-danger" id="unstakeButton">Unstake</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Scripts -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@latest/dist/browser/anchor.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

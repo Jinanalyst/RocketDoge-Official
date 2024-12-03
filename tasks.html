@@ -278,6 +278,31 @@
             <p>Complete tasks to earn ROCKET tokens</p>
         </div>
         <div id="walletSection" class="text-center mb-4">
+            <div class="row">
+                <div class="col-md-6 mx-auto">
+                    <div class="card bg-dark">
+                        <div class="card-body">
+                            <h5 class="card-title text-white">RDOGE Token Claim</h5>
+                            <div class="token-info mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Available:</span>
+                                    <span class="text-success">1000 RDOGE</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Your Balance:</span>
+                                    <span id="tokenBalance" class="text-info">0 RDOGE</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Tasks Completed:</span>
+                                    <span id="tasksCompleted" class="text-warning">0/5</span>
+                                </div>
+                            </div>
+                            <button id="claimButton" class="btn btn-success w-100" disabled>Complete Tasks to Claim 1000 RDOGE</button>
+                            <small class="text-muted mt-2 d-block">Complete all tasks below to claim your tokens</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <button id="connectWalletBtn" class="btn btn-primary btn-lg">Connect Wallet</button>
             <div class="wallet-info" style="display: none;">
                 <div class="wallet-address" id="walletAddress"></div>
@@ -287,7 +312,7 @@
 
         <div id="taskSection" class="mt-4" style="display: none; opacity: 0; transform: translateY(20px);">
             <!-- Task 1: Social Media -->
-            <div class="task-card">
+            <div class="task-card" data-task-id="1">
                 <div class="task-header">
                     <span class="task-number">Task 1</span>
                     <span class="reward-badge">Reward: 100 ROCKET</span>
@@ -300,13 +325,13 @@
                 </div>
                 <div class="mt-3">
                     <input type="text" class="verification-input" placeholder="Enter your Twitter and Telegram usernames (comma-separated)" id="socialVerification">
-                    <button class="btn btn-verify mt-2" onclick="verifyTask(1)">Verify Follow</button>
+                    <button class="btn btn-verify mt-2">Verify Follow</button>
                 </div>
                 <div class="task-status" id="task1-status"></div>
             </div>
 
             <!-- Task 2: Blofin Signup -->
-            <div class="task-card">
+            <div class="task-card" data-task-id="2">
                 <div class="task-header">
                     <span class="task-number">Task 2</span>
                     <span class="reward-badge">Reward: 200 ROCKET</span>
@@ -316,13 +341,13 @@
                 <div class="referral-link" id="blofinLink">https://bit.ly/49hmIw1</div>
                 <div class="mt-3">
                     <input type="text" class="verification-input" placeholder="Enter your Blofin username" id="blofinVerification">
-                    <button class="btn btn-verify mt-2" onclick="verifyTask(2)">Verify Signup</button>
+                    <button class="btn btn-verify mt-2">Verify Signup</button>
                 </div>
                 <div class="task-status" id="task2-status"></div>
             </div>
 
             <!-- Task 3: OKX Signup -->
-            <div class="task-card">
+            <div class="task-card" data-task-id="3">
                 <div class="task-header">
                     <span class="task-number">Task 3</span>
                     <span class="reward-badge">Reward: 200 ROCKET</span>
@@ -332,13 +357,13 @@
                 <div class="referral-link" id="okxLink">https://bit.ly/okxaffiliatepartner</div>
                 <div class="mt-3">
                     <input type="text" class="verification-input" placeholder="Enter your OKX username" id="okxVerification">
-                    <button class="btn btn-verify mt-2" onclick="verifyTask(3)">Verify Signup</button>
+                    <button class="btn btn-verify mt-2">Verify Signup</button>
                 </div>
                 <div class="task-status" id="task3-status"></div>
             </div>
 
             <!-- Task 4: Blofin Deposit -->
-            <div class="task-card">
+            <div class="task-card" data-task-id="4">
                 <div class="task-header">
                     <span class="task-number">Task 4</span>
                     <span class="reward-badge">Reward: 500 ROCKET</span>
@@ -348,13 +373,13 @@
                 <div class="mt-3">
                     <input type="text" class="verification-input" placeholder="Enter TRON transaction ID (64 characters)" id="blofinDepositVerification">
                     <small class="text-muted d-block mt-1">Transaction must be confirmed on TRON network</small>
-                    <button class="btn btn-verify mt-2" onclick="verifyTask(4)">Verify Deposit</button>
+                    <button class="btn btn-verify mt-2">Verify Deposit</button>
                 </div>
                 <div class="task-status" id="task4-status"></div>
             </div>
 
             <!-- Task 5: OKX Deposit -->
-            <div class="task-card">
+            <div class="task-card" data-task-id="5">
                 <div class="task-header">
                     <span class="task-number">Task 5</span>
                     <span class="reward-badge">Reward: 500 ROCKET</span>
@@ -364,7 +389,7 @@
                 <div class="mt-3">
                     <input type="text" class="verification-input" placeholder="Enter in format: txId:amount:USDT" id="okxDepositVerification">
                     <small class="text-muted d-block mt-1">Example: abc123:100:USDT</small>
-                    <button class="btn btn-verify mt-2" onclick="verifyTask(5)">Verify Deposit</button>
+                    <button class="btn btn-verify mt-2">Verify Deposit</button>
                 </div>
                 <div class="task-status" id="task5-status"></div>
             </div>
@@ -373,38 +398,196 @@
 
     <script type="module">
         import { walletManager } from './js/app.js';
-        
+        import { taskManager } from './js/tasks.js';
+        import { verificationService } from './js/verification.js';
+
+        let completedTasks = 0;
+        const REQUIRED_TASKS = 5;
+        const completedTaskIds = new Set();
+
         document.addEventListener('DOMContentLoaded', async () => {
-            // Initialize network selector
-            const networkSelect = document.getElementById('networkSelect');
-            if (networkSelect) {
-                // Set initial value
-                networkSelect.value = walletManager.getNetwork();
-                
-                // Add change listener
-                networkSelect.addEventListener('change', async (e) => {
-                    await walletManager.switchNetwork(e.target.value);
+            await walletManager.initialize();
+            await taskManager.initialize();
+            setupVerificationListeners();
+            updateTaskProgress();
+
+            async function verifyTask(taskId) {
+                if (!walletManager.isConnected()) {
+                    showError('Please connect your wallet first');
+                    return false;
+                }
+
+                if (completedTaskIds.has(taskId)) {
+                    showError('Task already completed');
+                    return false;
+                }
+
+                const taskCard = document.querySelector(`[data-task-id="${taskId}"]`);
+                const statusElement = document.getElementById(`task${taskId}-status`);
+                const verificationInput = taskCard.querySelector('.verification-input');
+                const input = verificationInput ? verificationInput.value.trim() : '';
+
+                if (!input) {
+                    showError('Please provide verification information');
+                    return false;
+                }
+
+                try {
+                    let isVerified = false;
+                    statusElement.textContent = 'Verifying...';
+                    
+                    switch(taskId) {
+                        case 1: // Social Media
+                            const [twitter, telegram] = input.split(',').map(s => s.trim());
+                            isVerified = await verificationService.verifySocialFollow(twitter, telegram);
+                            break;
+                            
+                        case 2: // Blofin Signup
+                            isVerified = await verificationService.verifyBlofinSignup(input);
+                            break;
+                            
+                        case 3: // OKX Signup
+                            isVerified = await verificationService.verifyOKXSignup(input);
+                            break;
+                            
+                        case 4: // Blofin Deposit
+                            isVerified = await verificationService.verifyBlofinDeposit(input);
+                            break;
+                            
+                        case 5: // OKX Deposit
+                            isVerified = await verificationService.verifyOKXDeposit(input);
+                            break;
+                    }
+
+                    if (isVerified) {
+                        completedTaskIds.add(taskId);
+                        completedTasks++;
+                        updateTaskProgress();
+                        
+                        // Update UI
+                        statusElement.textContent = 'Verified Successfully';
+                        statusElement.className = 'task-status text-success';
+                        taskCard.classList.add('completed');
+                        
+                        // Disable input and button
+                        verificationInput.disabled = true;
+                        taskCard.querySelector('.btn-verify').disabled = true;
+                        
+                        if (completedTasks >= REQUIRED_TASKS) {
+                            claimButton.disabled = false;
+                            claimButton.textContent = 'Claim 1000 RDOGE';
+                        }
+                        
+                        showSuccess(`Task ${taskId} verified successfully!`);
+                        return true;
+                    } else {
+                        statusElement.textContent = 'Verification Failed';
+                        statusElement.className = 'task-status text-danger';
+                        showError('Verification failed. Please check your input and try again.');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Task verification error:', error);
+                    statusElement.textContent = 'Verification Error';
+                    statusElement.className = 'task-status text-danger';
+                    showError(error.message);
+                    return false;
+                }
+            }
+
+            function setupVerificationListeners() {
+                document.querySelectorAll('.btn-verify').forEach(button => {
+                    button.addEventListener('click', async (event) => {
+                        const taskId = event.target.closest('.task-card').getAttribute('data-task-id');
+                        await verifyTask(parseInt(taskId));
+                    });
                 });
             }
-            
-            // Initialize task-specific event listeners
-            setupTaskEventListeners();
-        });
 
-        function setupTaskEventListeners() {
-            // Add event listeners for task completion buttons
-            const taskButtons = document.querySelectorAll('[id^="completeTask"]');
-            taskButtons.forEach(button => {
-                button.addEventListener('click', async (e) => {
-                    if (!walletManager.isConnected()) {
-                        walletManager.showError('Please connect your wallet first');
-                        return;
-                    }
-                    const taskId = button.getAttribute('data-task-id');
-                    await handleTaskCompletion(taskId);
-                });
+            const connectWalletBtn = document.getElementById('connectWalletBtn');
+            const walletInfo = document.querySelector('.wallet-info');
+            const walletAddress = document.getElementById('walletAddress');
+            const taskSection = document.getElementById('taskSection');
+            const claimButton = document.getElementById('claimButton');
+
+            connectWalletBtn.addEventListener('click', async () => {
+                try {
+                    await walletManager.connect();
+                    updateWalletUI();
+                } catch (error) {
+                    console.error('Error connecting wallet:', error);
+                    showError('Failed to connect wallet: ' + error.message);
+                }
             });
-        }
+
+            document.addEventListener('walletConnectionChanged', updateWalletUI);
+
+            // Handle token claim
+            claimButton.addEventListener('click', async () => {
+                if (completedTasks < REQUIRED_TASKS) {
+                    showError('Please complete all tasks first');
+                    return;
+                }
+
+                try {
+                    await taskManager.claimTokens();
+                    claimButton.disabled = true;
+                    claimButton.textContent = 'Tokens Claimed';
+                    showSuccess('Successfully claimed 1000 RDOGE! Head to Staking page to start earning rewards.');
+                } catch (error) {
+                    console.error('Error claiming tokens:', error);
+                    showError('Failed to claim tokens: ' + error.message);
+                }
+            });
+
+            function updateTaskProgress() {
+                const tasksCompleted = document.getElementById('tasksCompleted');
+                tasksCompleted.textContent = `${completedTasks}/${REQUIRED_TASKS}`;
+                
+                if (completedTasks >= REQUIRED_TASKS) {
+                    tasksCompleted.className = 'text-success';
+                } else {
+                    tasksCompleted.className = 'text-warning';
+                }
+            }
+
+            function updateWalletUI() {
+                if (walletManager.isConnected()) {
+                    connectWalletBtn.style.display = 'none';
+                    walletInfo.style.display = 'block';
+                    walletAddress.textContent = `Connected: ${walletManager.publicKey.toString()}`;
+                    taskSection.style.display = 'block';
+                    setTimeout(() => {
+                        taskSection.style.opacity = '1';
+                        taskSection.style.transform = 'translateY(0)';
+                    }, 100);
+                } else {
+                    connectWalletBtn.style.display = 'block';
+                    walletInfo.style.display = 'none';
+                    taskSection.style.display = 'none';
+                }
+            }
+
+            function showError(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                errorDiv.className = 'alert alert-danger';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            function showSuccess(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                errorDiv.className = 'alert alert-success';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
+        });
     </script>
 </body>
 </html>

@@ -1,7 +1,13 @@
 // Staking Manager for RocketDoge DEX
 import { walletManager } from './app.js';
-import { TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from '@solana/spl-token';
-import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { 
+    TOKEN_PROGRAM_ID, 
+    createAssociatedTokenAccountInstruction, 
+    getAssociatedTokenAddress,
+    getAccount,
+    createTransferInstruction
+} from '@solana/spl_token';
+import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 
 export class StakingManager {
     constructor() {
@@ -17,37 +23,58 @@ export class StakingManager {
         
         this.connection = walletManager.connection;
         this.stakes = new Map(); // Map to store stake info by user
+        
+        // Set up balance check interval
+        setInterval(() => this.updateBalances(), 5000); // Check every 5 seconds
     }
 
     async initialize() {
         await this.loadStakingData();
         this.setupEventListeners();
+        await this.updateBalances();
     }
 
-    // Load staking data for connected wallet
-    async loadStakingData() {
+    // Update all balances
+    async updateBalances() {
         if (!walletManager.isConnected()) return;
 
         try {
             const walletAddress = walletManager.publicKey;
             
-            // Get token balance
-            const tokenAccount = await getAssociatedTokenAddress(
+            // Get user's token account
+            const userTokenAccount = await getAssociatedTokenAddress(
                 this.RDOGE_MINT,
                 walletAddress
             );
-            
-            const balance = await this.connection.getTokenAccountBalance(tokenAccount);
-            document.getElementById('tokenBalance').textContent = 
-                (balance.value.uiAmount || 0).toFixed(2);
 
-            // Load stake info
+            // Get staking pool's token account
+            const poolTokenAccount = await getAssociatedTokenAddress(
+                this.RDOGE_MINT,
+                this.STAKING_AUTHORITY
+            );
+
+            // Get balances
+            try {
+                const userBalance = await this.connection.getTokenAccountBalance(userTokenAccount);
+                document.getElementById('tokenBalance').textContent = 
+                    (userBalance.value.uiAmount || 0).toFixed(2);
+            } catch (e) {
+                console.log('User token account not found');
+                document.getElementById('tokenBalance').textContent = '0.00';
+            }
+
+            // Get stake info and update UI
             const stakeInfo = await this.getStakeInfo(walletAddress);
             if (stakeInfo) {
                 document.getElementById('stakedAmount').textContent = 
                     stakeInfo.amount.toFixed(2);
+                
+                const rewards = this.calculateRewards(stakeInfo);
                 document.getElementById('rewards').textContent = 
-                    this.calculateRewards(stakeInfo).toFixed(2);
+                    rewards.toFixed(2);
+            } else {
+                document.getElementById('stakedAmount').textContent = '0.00';
+                document.getElementById('rewards').textContent = '0.00';
             }
 
             // Update total staked
@@ -55,10 +82,21 @@ export class StakingManager {
             document.getElementById('totalStaked').textContent = 
                 totalStaked.toFixed(2);
 
+        } catch (error) {
+            console.error('Error updating balances:', error);
+        }
+    }
+
+    // Load staking data for connected wallet
+    async loadStakingData() {
+        if (!walletManager.isConnected()) return;
+
+        try {
             // Update APR
             document.getElementById('currentAPY').textContent = 
                 `${this.APR}%`;
 
+            await this.updateBalances();
         } catch (error) {
             console.error('Error loading staking data:', error);
         }
@@ -91,17 +129,25 @@ export class StakingManager {
             });
         }
 
-        // Add claim button
-        const claimButton = document.createElement('button');
-        claimButton.className = 'btn btn-success w-100 mt-3';
-        claimButton.textContent = 'Claim Rewards';
-        claimButton.addEventListener('click', () => this.claimRewards());
+        // Add claim button if it doesn't exist
+        if (!document.getElementById('claimButton')) {
+            const claimButton = document.createElement('button');
+            claimButton.id = 'claimButton';
+            claimButton.className = 'btn btn-success w-100 mt-3';
+            claimButton.textContent = 'Claim Rewards';
+            claimButton.addEventListener('click', () => this.claimRewards());
 
-        // Add it after the unstake button
-        const actionsCard = document.querySelector('.card:last-child .card-body');
-        if (actionsCard) {
-            actionsCard.appendChild(claimButton);
+            // Add it after the unstake button
+            const actionsCard = document.querySelector('.card:last-child .card-body');
+            if (actionsCard) {
+                actionsCard.appendChild(claimButton);
+            }
         }
+
+        // Listen for wallet connection changes
+        document.addEventListener('walletConnectionChanged', () => {
+            this.loadStakingData();
+        });
     }
 
     // Calculate rewards based on stake amount and time
@@ -134,34 +180,52 @@ export class StakingManager {
             // Create transaction
             const transaction = new Transaction();
             
-            // Get token account
-            const tokenAccount = await getAssociatedTokenAddress(
+            // Get token accounts
+            const userTokenAccount = await getAssociatedTokenAddress(
                 this.RDOGE_MINT,
                 walletAddress
             );
+            
+            const poolTokenAccount = await getAssociatedTokenAddress(
+                this.RDOGE_MINT,
+                this.STAKING_AUTHORITY
+            );
 
-            // Check if token account exists
-            const tokenAccountInfo = await this.connection.getAccountInfo(tokenAccount);
-            if (!tokenAccountInfo) {
-                // Create associated token account if it doesn't exist
+            // Check if user's token account exists
+            const userAccountInfo = await this.connection.getAccountInfo(userTokenAccount);
+            if (!userAccountInfo) {
                 transaction.add(
                     createAssociatedTokenAccountInstruction(
                         walletAddress,
-                        tokenAccount,
+                        userTokenAccount,
                         walletAddress,
                         this.RDOGE_MINT
                     )
                 );
             }
 
+            // Check if pool's token account exists
+            const poolAccountInfo = await this.connection.getAccountInfo(poolTokenAccount);
+            if (!poolAccountInfo) {
+                transaction.add(
+                    createAssociatedTokenAccountInstruction(
+                        walletAddress,
+                        poolTokenAccount,
+                        this.STAKING_AUTHORITY,
+                        this.RDOGE_MINT
+                    )
+                );
+            }
+
             // Add transfer instruction
-            const transferIx = await this.createTransferInstruction(
-                tokenAccount,
-                this.STAKING_AUTHORITY,
-                walletAddress,
-                amount
+            transaction.add(
+                createTransferInstruction(
+                    userTokenAccount,
+                    poolTokenAccount,
+                    walletAddress,
+                    amount * (10 ** 9) // Convert to lamports
+                )
             );
-            transaction.add(transferIx);
 
             // Send transaction
             const signature = await walletManager.sendTransaction(transaction);
@@ -174,7 +238,11 @@ export class StakingManager {
             });
 
             // Update UI
-            await this.loadStakingData();
+            await this.updateBalances();
+            
+            // Clear input field
+            document.getElementById('stakeAmount').value = '';
+            
             alert('Staking successful!');
 
         } catch (error) {
@@ -202,20 +270,26 @@ export class StakingManager {
             // Create transaction
             const transaction = new Transaction();
             
-            // Get token account
-            const tokenAccount = await getAssociatedTokenAddress(
+            // Get token accounts
+            const userTokenAccount = await getAssociatedTokenAddress(
                 this.RDOGE_MINT,
                 walletAddress
             );
+            
+            const poolTokenAccount = await getAssociatedTokenAddress(
+                this.RDOGE_MINT,
+                this.STAKING_AUTHORITY
+            );
 
             // Add transfer instruction
-            const transferIx = await this.createTransferInstruction(
-                this.STAKING_AUTHORITY,
-                tokenAccount,
-                this.STAKING_AUTHORITY,
-                amount
+            transaction.add(
+                createTransferInstruction(
+                    poolTokenAccount,
+                    userTokenAccount,
+                    this.STAKING_AUTHORITY,
+                    amount * (10 ** 9) // Convert to lamports
+                )
             );
-            transaction.add(transferIx);
 
             // Send transaction
             const signature = await walletManager.sendTransaction(transaction);
@@ -233,7 +307,11 @@ export class StakingManager {
             }
 
             // Update UI
-            await this.loadStakingData();
+            await this.updateBalances();
+            
+            // Clear input field
+            document.getElementById('unstakeAmount').value = '';
+            
             alert('Unstaking successful!');
 
         } catch (error) {
@@ -267,20 +345,26 @@ export class StakingManager {
             // Create transaction
             const transaction = new Transaction();
             
-            // Get token account
-            const tokenAccount = await getAssociatedTokenAddress(
+            // Get token accounts
+            const userTokenAccount = await getAssociatedTokenAddress(
                 this.RDOGE_MINT,
                 walletAddress
             );
+            
+            const poolTokenAccount = await getAssociatedTokenAddress(
+                this.RDOGE_MINT,
+                this.STAKING_AUTHORITY
+            );
 
             // Add transfer instruction for rewards
-            const transferIx = await this.createTransferInstruction(
-                this.STAKING_AUTHORITY,
-                tokenAccount,
-                this.STAKING_AUTHORITY,
-                rewards
+            transaction.add(
+                createTransferInstruction(
+                    poolTokenAccount,
+                    userTokenAccount,
+                    this.STAKING_AUTHORITY,
+                    Math.floor(rewards * (10 ** 9)) // Convert to lamports and round down
+                )
             );
-            transaction.add(transferIx);
 
             // Send transaction
             const signature = await walletManager.sendTransaction(transaction);
@@ -293,22 +377,13 @@ export class StakingManager {
             });
 
             // Update UI
-            await this.loadStakingData();
+            await this.updateBalances();
             alert('Rewards claimed successfully!');
 
         } catch (error) {
             console.error('Error claiming rewards:', error);
             alert('Failed to claim rewards: ' + error.message);
         }
-    }
-
-    // Helper function to create transfer instruction
-    async createTransferInstruction(from, to, authority, amount) {
-        return SystemProgram.transfer({
-            fromPubkey: from,
-            toPubkey: to,
-            lamports: amount * LAMPORTS_PER_SOL
-        });
     }
 
     // Helper function to get stake info

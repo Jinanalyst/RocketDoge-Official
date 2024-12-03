@@ -59,17 +59,52 @@ body {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.7)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
+/* Wallet Button Styles */
 #walletBtn {
-    background-color: var(--primary-color);
+    background: var(--primary-color);
     border: none;
     padding: 0.5rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: opacity 0.2s;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    transition: all 0.2s ease;
 }
 
 #walletBtn:hover {
-    opacity: 0.9;
+    background: #ff2994;
+    transform: translateY(-1px);
+}
+
+#walletBtn.connected {
+    background: var(--bg-dark);
+    border: 1px solid var(--primary-color);
+}
+
+/* Error Message Styles */
+#errorMessage {
+    display: none;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+    background-color: #dc3545;
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 /* Page Title Styles */

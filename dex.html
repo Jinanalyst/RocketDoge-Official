@@ -406,6 +406,9 @@
     <script src="js/app.js" type="module"></script>
     <script type="module">
         import { walletManager } from './js/app.js';
+        import { SwapManager, TOKEN_CONFIGS, POOL_CONFIGS } from './js/swap.js';
+        
+        let swapManager;
         
         document.addEventListener('DOMContentLoaded', async () => {
             // Initialize network selector
@@ -417,29 +420,79 @@
                 // Add change listener
                 networkSelect.addEventListener('change', async (e) => {
                     await walletManager.switchNetwork(e.target.value);
+                    await initializeSwapManager();
                 });
             }
+            
+            // Initialize wallet connection listener
+            walletManager.onWalletConnect(async () => {
+                await initializeSwapManager();
+                document.getElementById('swapInterface').classList.remove('disabled');
+            });
+
+            walletManager.onWalletDisconnect(() => {
+                swapManager = null;
+                document.getElementById('swapInterface').classList.add('disabled');
+            });
             
             // Initialize DEX-specific event listeners
             setupDexEventListeners();
             
             // Initialize token lists
             await initializeTokenLists();
+
+            // Initialize swap manager if wallet is connected
+            if (walletManager.isConnected()) {
+                await initializeSwapManager();
+                document.getElementById('swapInterface').classList.remove('disabled');
+            }
         });
 
-        async function initializeTokenLists() {
-            const tokens = await getAvailableTokens();
-            populateTokenLists(tokens);
-            setupTokenChangeListeners();
+        async function initializeSwapManager() {
+            if (!walletManager.isConnected()) return;
+            
+            swapManager = new SwapManager(
+                walletManager.getConnection(),
+                walletManager.getWallet()
+            );
+
+            // Update token balances
+            await updateTokenBalances();
         }
 
-        async function getAvailableTokens() {
-            // For now, return a basic list of tokens
-            return [
-                { symbol: 'SOL', name: 'Solana', decimals: 9 },
-                { symbol: 'RDOGE', name: 'RocketDoge', decimals: 9 },
-                { symbol: 'USDC', name: 'USD Coin', decimals: 6 }
-            ];
+        async function updateTokenBalances() {
+            if (!swapManager) return;
+
+            try {
+                for (const [symbol, config] of Object.entries(TOKEN_CONFIGS)) {
+                    const tokenAccount = await swapManager.getTokenAccount(config.mint);
+                    const balance = await swapManager.getTokenBalance(tokenAccount);
+                    
+                    // Update balance display in token dropdowns
+                    const fromOption = document.querySelector(`#fromToken option[value="${symbol}"]`);
+                    const toOption = document.querySelector(`#toToken option[value="${symbol}"]`);
+                    
+                    if (fromOption) {
+                        fromOption.textContent = `${symbol} - ${config.name} (${balance.toFixed(4)})`;
+                    }
+                    if (toOption) {
+                        toOption.textContent = `${symbol} - ${config.name} (${balance.toFixed(4)})`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating token balances:', error);
+            }
+        }
+
+        async function initializeTokenLists() {
+            const tokens = Object.entries(TOKEN_CONFIGS).map(([symbol, config]) => ({
+                symbol,
+                name: config.name,
+                decimals: config.decimals
+            }));
+            
+            populateTokenLists(tokens);
+            setupTokenChangeListeners();
         }
 
         function populateTokenLists(tokens) {
@@ -475,44 +528,50 @@
             const toToken = document.getElementById('toToken').value;
             const toAmountInput = document.getElementById('toAmount');
             
-            if (!fromAmount || !fromToken || !toToken) {
+            if (!fromAmount || !fromToken || !toToken || !swapManager) {
                 toAmountInput.value = '';
                 return;
             }
-            
-            // For demo, using a simple 1:1 conversion rate
-            // In production, this would fetch real rates from an oracle or AMM
-            const exchangeRate = await getExchangeRate(fromToken, toToken);
-            const toAmount = parseFloat(fromAmount) * exchangeRate;
-            toAmountInput.value = toAmount.toFixed(6);
-            
-            // Update price impact warning
-            updatePriceImpact(fromAmount, toAmount);
+
+            try {
+                // Get pool configuration
+                const poolKey = `${fromToken}_${toToken}`;
+                const poolConfig = POOL_CONFIGS[poolKey];
+                
+                if (!poolConfig) {
+                    walletManager.showError('No liquidity pool available for this pair');
+                    return;
+                }
+
+                // Calculate expected output amount
+                const { amountOut, priceImpact, fee } = await swapManager.calculateAmountOut(
+                    poolConfig.address,
+                    TOKEN_CONFIGS[fromToken].mint,
+                    TOKEN_CONFIGS[toToken].mint,
+                    parseFloat(fromAmount)
+                );
+
+                // Update UI
+                toAmountInput.value = amountOut.toFixed(6);
+                updatePriceImpact(priceImpact);
+                
+                // Update fee display if you have one
+                const feeDisplay = document.getElementById('swapFee');
+                if (feeDisplay) {
+                    feeDisplay.textContent = `Fee: ${fee.toFixed(6)} ${fromToken}`;
+                }
+            } catch (error) {
+                console.error('Error calculating swap:', error);
+                walletManager.showError('Error calculating swap amount');
+            }
         }
 
-        async function getExchangeRate(fromToken, toToken) {
-            // In production, this would fetch real rates
-            // For now, using mock rates
-            const rates = {
-                'SOL_RDOGE': 1000,
-                'RDOGE_SOL': 0.001,
-                'SOL_USDC': 60,
-                'USDC_SOL': 0.0166667,
-                'RDOGE_USDC': 0.06,
-                'USDC_RDOGE': 16.6667
-            };
-            
-            const pair = `${fromToken}_${toToken}`;
-            return rates[pair] || 1;
-        }
-
-        function updatePriceImpact(fromAmount, toAmount) {
+        function updatePriceImpact(priceImpact) {
             const priceImpactWarning = document.getElementById('priceImpactWarning');
-            const impact = Math.abs((toAmount / fromAmount - 1) * 100);
             
-            if (impact > 5) {
+            if (priceImpact > 5) {
                 priceImpactWarning.classList.remove('d-none');
-                priceImpactWarning.textContent = `Price impact: ${impact.toFixed(2)}%. Please be careful!`;
+                priceImpactWarning.textContent = `Price impact: ${priceImpact.toFixed(2)}%. Please be careful!`;
             } else {
                 priceImpactWarning.classList.add('d-none');
             }
@@ -520,33 +579,49 @@
 
         async function handleSwap() {
             try {
-                const fromAmount = document.getElementById('fromAmount').value;
+                const fromAmount = parseFloat(document.getElementById('fromAmount').value);
                 const fromToken = document.getElementById('fromToken').value;
                 const toToken = document.getElementById('toToken').value;
+                const toAmount = parseFloat(document.getElementById('toAmount').value);
                 
-                if (!fromAmount || !fromToken || !toToken) {
+                if (!fromAmount || !fromToken || !toToken || !swapManager) {
                     walletManager.showError('Please select tokens and enter an amount');
-                    return;
-                }
-                
-                if (!walletManager.isConnected()) {
-                    walletManager.showError('Please connect your wallet first');
                     return;
                 }
                 
                 // Show loading state
                 document.getElementById('loadingOverlay').style.display = 'flex';
                 
-                // In production, this would call the actual swap function
-                // For now, simulate a swap with a delay
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Get pool configuration
+                const poolKey = `${fromToken}_${toToken}`;
+                const poolConfig = POOL_CONFIGS[poolKey];
                 
-                // Update UI after successful swap
+                if (!poolConfig) {
+                    throw new Error('No liquidity pool available for this pair');
+                }
+
+                // Execute swap
+                const result = await swapManager.swap(
+                    poolConfig.address,
+                    TOKEN_CONFIGS[fromToken].mint,
+                    TOKEN_CONFIGS[toToken].mint,
+                    fromAmount,
+                    toAmount,
+                    0.5 // 0.5% slippage tolerance
+                );
+                
+                // Clear inputs
                 document.getElementById('fromAmount').value = '';
                 document.getElementById('toAmount').value = '';
                 
-                // Show success message
-                walletManager.showSuccess(`Successfully swapped ${fromAmount} ${fromToken} to ${toToken}`);
+                // Update token balances
+                await updateTokenBalances();
+                
+                // Show success message with transaction signature
+                walletManager.showSuccess(
+                    `Swap successful! Transaction: ${result.signature}`,
+                    `Swapped ${result.fromAmount} ${fromToken} for ${result.toAmount} ${toToken}`
+                );
             } catch (error) {
                 console.error('Swap failed:', error);
                 walletManager.showError('Swap failed: ' + error.message);
@@ -568,29 +643,6 @@
                     await handleSwap();
                 });
             }
-
-            // Add event listeners for liquidity form
-            const liquidityForm = document.getElementById('liquidityForm');
-            if (liquidityForm) {
-                liquidityForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    if (!walletManager.isConnected()) {
-                        walletManager.showError('Please connect your wallet first');
-                        return;
-                    }
-                    await handleLiquidity();
-                });
-            }
-
-            // Add event listener for tab switching
-            const menuLinks = document.querySelectorAll('.menu-nav-link');
-            menuLinks.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const tabId = link.getAttribute('href').substring(1);
-                    switchTab(tabId);
-                });
-            });
 
             // Add event listener for swap direction button
             const swapDirectionBtn = document.getElementById('swapDirection');

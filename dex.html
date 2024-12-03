@@ -370,6 +370,9 @@
             pointer-events: none;
         }
     </style>
+    <!-- Add Web3 Dependencies -->
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="wallet.js" defer></script>
 </head>
 <body>
     <!-- Loading Overlay -->
@@ -591,5 +594,15 @@
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@latest/dist/browser/anchor.min.js"></script>
     <script src="dex.js" type="module"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const walletBtn = document.getElementById("walletBtn");
+            walletBtn.addEventListener("click", async () => {
+                if (!walletManager.isConnected()) {
+                    await walletManager.connectWallet();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

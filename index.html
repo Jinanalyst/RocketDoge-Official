@@ -171,14 +171,31 @@
             color: #fff;
         }
     </style>
-    <!-- Add Web3 Dependencies -->
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="https://unpkg.com/@solana/spl-token@0.3.7/lib/index.iife.min.js"></script>
-    <script src="js/token-helper.js"></script>
-    <script src="wallet.js" defer></script>
     <!-- Web3 Dependencies -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="wallet.js" defer></script>
+    <script src="https://unpkg.com/@solana/spl-token@0.3.7/lib/index.iife.min.js"></script>
+    <script src="js/wallet.js" defer></script>
+    <script src="js/staking.js" type="module" defer></script>
+    
+    <script type="module">
+        import { stakingManager } from './js/staking.js';
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize staking manager
+            await stakingManager.initialize();
+            
+            // Initialize network selector
+            const networkSelect = document.getElementById('networkSelect');
+            if (networkSelect) {
+                networkSelect.value = walletManager.getNetwork();
+                networkSelect.addEventListener('change', async (e) => {
+                    await walletManager.switchNetwork(e.target.value);
+                    // Reload staking data when network changes
+                    await stakingManager.loadStakingData();
+                });
+            }
+        });
+    </script>
 </head>
 <body>
     <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>

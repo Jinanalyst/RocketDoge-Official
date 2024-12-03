@@ -145,6 +145,8 @@
     </style>
     <!-- Add Web3 Dependencies -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@solana/spl-token@0.3.7/lib/index.iife.min.js"></script>
+    <script src="js/token-helper.js"></script>
     <script src="wallet.js" defer></script>
     <!-- Web3 Dependencies -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
@@ -180,6 +182,11 @@
 
     <div class="container mt-4">
         <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+        
+        <!-- Devnet Notice -->
+        <div class="alert alert-info mb-4">
+            <strong>Devnet Mode:</strong> This is running on Solana devnet. A test token will be created when you connect your wallet.
+        </div>
 
         <div class="row">
             <!-- Staking Stats -->
@@ -188,16 +195,16 @@
                     <div class="card-body">
                         <h5 class="card-title">Staking Stats</h5>
                         <div class="stat-item">
+                            <span class="label">Your Balance:</span>
+                            <span id="tokenBalance">0</span> RDOGE
+                        </div>
+                        <div class="stat-item">
                             <span class="label">Total Staked:</span>
                             <span id="totalStaked">0</span> RDOGE
                         </div>
                         <div class="stat-item">
                             <span class="label">Current APY:</span>
-                            <span id="currentAPY">0%</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="label">Lock Period:</span>
-                            <span id="lockPeriod">0</span>
+                            <span id="currentAPY">120%</span>
                         </div>
                     </div>
                 </div>
@@ -256,12 +263,25 @@
     <script src="app.js" type="module"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const walletBtn = document.getElementById("walletBtn");
-            walletBtn.addEventListener("click", async () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            const walletBtn = document.getElementById('walletBtn');
+            const tokenBalance = document.getElementById('tokenBalance');
+
+            walletBtn.addEventListener('click', async () => {
                 if (!walletManager.isConnected()) {
                     await walletManager.connectWallet();
                 }
+            });
+
+            // Update token balance when wallet is connected
+            window.addEventListener('walletConnected', async () => {
+                const balance = await walletManager.getDevnetTokenBalance();
+                tokenBalance.textContent = balance.toFixed(2);
+            });
+
+            // Reset token balance when wallet is disconnected
+            window.addEventListener('walletDisconnected', () => {
+                tokenBalance.textContent = '0';
             });
         });
     </script>

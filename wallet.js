@@ -5,6 +5,8 @@ class WalletManager {
         this.provider = null;
         this.connected = false;
         this.publicKey = null;
+        this.tokenHelper = null;
+        this.devnetToken = null;
         this.init();
     }
 
@@ -13,6 +15,7 @@ class WalletManager {
             // Initialize Solana connection (using devnet for development)
             const network = "https://api.devnet.solana.com";
             this.connection = new solanaWeb3.Connection(network);
+            this.tokenHelper = new TokenHelper(this.connection);
         } catch (error) {
             console.error("Failed to initialize wallet manager:", error);
         }
@@ -33,6 +36,9 @@ class WalletManager {
             this.provider = solana;
             this.connected = true;
 
+            // Create devnet token if needed
+            await this.initializeDevnetToken();
+
             // Update UI elements
             this.updateUI();
             
@@ -40,6 +46,7 @@ class WalletManager {
             solana.on('disconnect', () => {
                 this.connected = false;
                 this.publicKey = null;
+                this.devnetToken = null;
                 this.updateUI();
             });
 
@@ -49,6 +56,25 @@ class WalletManager {
             this.showError(error.message);
             return false;
         }
+    }
+
+    async initializeDevnetToken() {
+        try {
+            if (!this.devnetToken) {
+                this.devnetToken = await this.tokenHelper.createDevnetToken(this);
+                console.log("Created devnet token:", this.devnetToken);
+            }
+        } catch (error) {
+            console.error("Error initializing devnet token:", error);
+            this.showError("Failed to initialize devnet token. Please try again.");
+        }
+    }
+
+    async getDevnetTokenBalance() {
+        if (!this.devnetToken?.tokenAccount) {
+            return 0;
+        }
+        return await this.tokenHelper.getTokenBalance(this.devnetToken.tokenAccount);
     }
 
     updateUI() {

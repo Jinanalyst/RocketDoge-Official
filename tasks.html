@@ -201,15 +201,6 @@
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="tasks.js" type="module"></script>
-    <script type="module">
-        import { initializeWallet, setupEventListeners, checkWalletConnection } from './tasks.js';
-        
-        document.addEventListener('DOMContentLoaded', async function() {
-            await initializeWallet();
-            setupEventListeners();
-            await checkWalletConnection();
-        });
-    </script>
 </head>
 <body>
     <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
@@ -337,5 +328,20 @@
             </div>
         </div>
     </div>
+
+    <script type="module">
+        import {
+            initializeWallet,
+            setupEventListeners,
+            checkWalletConnection
+        } from './tasks.js';
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeWallet();
+            setupEventListeners();
+            checkWalletConnection();
+        });
+    </script>
 </body>
 </html>

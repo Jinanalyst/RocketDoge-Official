@@ -23,10 +23,115 @@ const taskStatus = tasksConfig.TASK_STATUS;
 const taskRewards = tasksConfig.TASK_REWARDS;
 
 // Initialize when page loads
-window.addEventListener('load', function() {
-    initializeWallet();
-    document.getElementById('connectWalletBtn').addEventListener('click', connectWallet);
+document.addEventListener('DOMContentLoaded', async function() {
+    await initializeWallet();
+    setupEventListeners();
+    checkWalletConnection();
 });
+
+// Setup all event listeners
+function setupEventListeners() {
+    // Wallet connection buttons
+    const walletBtn = document.getElementById('walletBtn');
+    const connectWalletBtn = document.getElementById('connectWalletBtn');
+    
+    if (walletBtn) {
+        walletBtn.addEventListener('click', connectWallet);
+    }
+    if (connectWalletBtn) {
+        connectWalletBtn.addEventListener('click', connectWallet);
+    }
+
+    // Handle Phantom wallet events
+    window.solana?.on('connect', handleWalletConnect);
+    window.solana?.on('disconnect', handleWalletDisconnect);
+    window.solana?.on('accountChanged', handleAccountChanged);
+}
+
+// Check if wallet is already connected
+async function checkWalletConnection() {
+    try {
+        const provider = getProvider();
+        if (provider && provider.isConnected) {
+            const publicKey = provider.publicKey.toString();
+            wallet = provider;
+            
+            // Update UI
+            updateWalletDisplay(publicKey);
+            showTaskSection();
+            await updateWalletBalance();
+        }
+    } catch (error) {
+        console.error('Error checking wallet connection:', error);
+    }
+}
+
+// Handle wallet connect event
+async function handleWalletConnect(publicKey) {
+    if (publicKey) {
+        updateWalletDisplay(publicKey.toString());
+        showTaskSection();
+        await updateWalletBalance();
+        showSuccess('Wallet connected successfully!');
+    }
+}
+
+// Handle wallet disconnect event
+function handleWalletDisconnect() {
+    wallet = null;
+    updateWalletDisplay(null);
+    hideTaskSection();
+    showSuccess('Wallet disconnected');
+}
+
+// Handle account change event
+async function handleAccountChanged(publicKey) {
+    if (publicKey) {
+        updateWalletDisplay(publicKey.toString());
+        await updateWalletBalance();
+    } else {
+        handleWalletDisconnect();
+    }
+}
+
+// Update wallet display
+function updateWalletDisplay(publicKey) {
+    const walletBtn = document.getElementById('walletBtn');
+    const connectWalletBtn = document.getElementById('connectWalletBtn');
+    const walletInfo = document.querySelector('.wallet-info');
+    const walletAddressElem = document.getElementById('walletAddress');
+
+    if (publicKey) {
+        // Connected state
+        if (walletBtn) {
+            walletBtn.textContent = `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`;
+        }
+        if (connectWalletBtn) {
+            connectWalletBtn.style.display = 'none';
+        }
+        if (walletInfo) {
+            walletInfo.style.display = 'block';
+        }
+        if (walletAddressElem) {
+            walletAddressElem.textContent = `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`;
+        }
+    } else {
+        // Disconnected state
+        if (walletBtn) {
+            walletBtn.textContent = 'Connect Wallet';
+        }
+        if (connectWalletBtn) {
+            connectWalletBtn.style.display = 'block';
+            connectWalletBtn.textContent = 'Connect Wallet';
+        }
+        if (walletInfo) {
+            walletInfo.style.display = 'none';
+        }
+        if (walletAddressElem) {
+            walletAddressElem.textContent = '';
+        }
+    }
+}
 
 async function initializeWallet() {
     try {
@@ -67,22 +172,42 @@ async function connectWallet() {
             throw new Error('Please install Phantom wallet to continue');
         }
 
+        // Update button states to loading
+        const walletBtn = document.getElementById('walletBtn');
+        const connectWalletBtn = document.getElementById('connectWalletBtn');
+        const walletInfo = document.querySelector('.wallet-info');
+        
+        if (walletBtn) {
+            walletBtn.disabled = true;
+            walletBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Connecting...';
+        }
+        if (connectWalletBtn) {
+            connectWalletBtn.disabled = true;
+            connectWalletBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Connecting...';
+        }
+
         const response = await provider.connect();
         wallet = provider;
         const walletAddress = response.publicKey.toString();
 
-        // Update UI elements
-        const walletBtn = document.getElementById('walletBtn');
-        const connectWalletBtn = document.getElementById('connectWalletBtn');
+        // Update wallet display
+        const walletAddressElem = document.getElementById('walletAddress');
+        if (walletInfo) walletInfo.style.display = 'block';
+        if (walletAddressElem) walletAddressElem.textContent = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
         
+        // Update buttons
         if (walletBtn) {
+            walletBtn.disabled = false;
             walletBtn.textContent = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
         }
         if (connectWalletBtn) {
-            connectWalletBtn.textContent = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
+            connectWalletBtn.style.display = 'none';
         }
 
-        // Enable task verification buttons
+        // Show task section with animation
+        showTaskSection();
+
+        // Enable verification buttons
         document.querySelectorAll('.verify-task-btn').forEach(btn => {
             btn.disabled = false;
         });
@@ -95,7 +220,23 @@ async function connectWallet() {
     } catch (err) {
         console.error('Failed to connect wallet:', err);
         showError('Failed to connect wallet. Please try again.');
-        updateWalletButton(false);
+        
+        // Reset button states
+        const walletBtn = document.getElementById('walletBtn');
+        const connectWalletBtn = document.getElementById('connectWalletBtn');
+        
+        if (walletBtn) {
+            walletBtn.disabled = false;
+            walletBtn.textContent = 'Connect Wallet';
+        }
+        if (connectWalletBtn) {
+            connectWalletBtn.disabled = false;
+            connectWalletBtn.textContent = 'Connect Wallet';
+        }
+
+        // Hide task section
+        hideTaskSection();
+        
         return false;
     }
 }
@@ -516,3 +657,25 @@ async function updateWalletBalance() {
 
 // Add auto-refresh for balance
 setInterval(updateWalletBalance, 30000); // Update every 30 seconds
+
+// Show task section with animation
+function showTaskSection() {
+    const taskSection = document.getElementById('taskSection');
+    if (taskSection) {
+        taskSection.style.display = 'block';
+        // Trigger reflow
+        void taskSection.offsetWidth;
+        taskSection.classList.add('visible');
+    }
+}
+
+// Hide task section
+function hideTaskSection() {
+    const taskSection = document.getElementById('taskSection');
+    if (taskSection) {
+        taskSection.classList.remove('visible');
+        setTimeout(() => {
+            taskSection.style.display = 'none';
+        }, 500); // Match the CSS transition duration
+    }
+}

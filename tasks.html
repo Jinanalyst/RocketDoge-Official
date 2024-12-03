@@ -139,6 +139,63 @@
             font-size: 1.2em;
             color: rgba(255, 255, 255, 0.7);
         }
+
+        /* Wallet Section Styles */
+        #walletSection {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        #connectWalletBtn {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        #connectWalletBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .wallet-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            font-size: 1.1rem;
+            color: #00ff00;
+            margin-bottom: 0.5rem;
+        }
+
+        #walletBalance {
+            font-weight: bold;
+            color: #00ff00;
+        }
+
+        /* Task Section Styles */
+        #taskSection {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        #taskSection.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            margin-right: 0.5rem;
+        }
     </style>
     <!-- Add Web3 Dependencies -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
@@ -181,14 +238,14 @@
             <p>Complete tasks to earn ROCKET tokens</p>
         </div>
         <div id="walletSection" class="text-center mb-4">
-            <button id="connectWalletBtn" class="wallet-button">Connect Wallet</button>
+            <button id="connectWalletBtn" class="btn btn-primary btn-lg">Connect Wallet</button>
             <div class="wallet-info" style="display: none;">
                 <div class="wallet-address" id="walletAddress"></div>
                 <div class="mt-2">Balance: <span id="walletBalance">0</span> SOL</div>
             </div>
         </div>
 
-        <div id="taskSection" style="display: none;">
+        <div id="taskSection" class="mt-4" style="display: none;">
             <!-- Task 1: Social Media -->
             <div class="task-card">
                 <div class="task-header">

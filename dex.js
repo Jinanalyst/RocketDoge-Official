@@ -92,63 +92,88 @@ async function initializeSolana() {
     }
 }
 
-// Connect wallet
+// Get Phantom wallet provider
+function getProvider() {
+    if ('phantom' in window) {
+        const provider = window.phantom?.solana;
+        if (provider?.isPhantom) {
+            return provider;
+        }
+    }
+    return null;
+}
+
 async function connectWallet() {
     try {
         const provider = getProvider();
         if (!provider) {
-            throw new Error(dexConfig.ERROR_MESSAGES.NO_WALLET);
+            throw new Error('Please install Phantom wallet to continue');
         }
 
-        await provider.connect();
+        const connectButton = document.getElementById('connectWalletBtn');
+        connectButton.disabled = true;
+        connectButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Connecting...';
+
+        const response = await provider.connect();
         wallet = provider;
         
-        const walletAddress = wallet.publicKey.toString();
-        updateWalletUI(walletAddress);
-        await updateUI();
+        await handleWalletConnection(true);
+        await updateTokenBalances();
         
-        // Enable swap interface
-        document.getElementById('swapInterface').classList.remove('disabled');
-    } catch (error) {
-        console.error('Wallet connection error:', error);
-        showError(error.message || dexConfig.ERROR_MESSAGES.CONNECTION_ERROR);
-        document.getElementById('swapInterface').classList.add('disabled');
+        showSuccess('Wallet connected successfully!');
+        return true;
+    } catch (err) {
+        console.error('Failed to connect wallet:', err);
+        showError('Failed to connect wallet. Please try again.');
+        handleWalletConnection(false);
+        return false;
+    } finally {
+        const connectButton = document.getElementById('connectWalletBtn');
+        if (connectButton) {
+            connectButton.disabled = false;
+            connectButton.innerHTML = wallet ? 'Wallet Connected' : 'Connect Wallet';
+        }
     }
 }
 
-// Tab switching functionality
-function switchTab(tabId) {
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-    });
-
-    // Remove active class from all nav links
-    document.querySelectorAll('.menu-nav-link').forEach(link => {
-        link.classList.remove('active');
-    });
-
-    // Show selected tab content
-    const selectedTab = document.getElementById(tabId);
-    if (selectedTab) {
-        selectedTab.classList.add('active');
+async function handleWalletConnection(connected) {
+    const walletSection = document.getElementById('walletSection');
+    const walletInfo = walletSection?.querySelector('.wallet-info');
+    const portfolioSection = document.querySelector('.portfolio-section');
+    const swapInterface = document.getElementById('swapInterface');
+    
+    if (connected && wallet?.publicKey) {
+        const walletAddress = wallet.publicKey.toString();
+        if (walletInfo) walletInfo.style.display = 'block';
+        if (portfolioSection) portfolioSection.style.display = 'block';
+        if (swapInterface) swapInterface.classList.remove('disabled');
+        
+        const walletAddressElem = document.getElementById('walletAddress');
+        if (walletAddressElem) {
+            walletAddressElem.textContent = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
+        }
+        
+        await updateWalletBalance();
+        await updateTokenBalances();
+        await refreshPortfolio();
+    } else {
+        if (walletInfo) walletInfo.style.display = 'none';
+        if (portfolioSection) portfolioSection.style.display = 'none';
+        if (swapInterface) swapInterface.classList.add('disabled');
+        
+        const walletAddressElem = document.getElementById('walletAddress');
+        const walletBalanceElem = document.getElementById('walletBalance');
+        
+        if (walletAddressElem) walletAddressElem.textContent = '';
+        if (walletBalanceElem) walletBalanceElem.textContent = '0';
     }
-
-    // Add active class to selected nav link
-    const selectedLink = document.querySelector(`[href="#${tabId}"]`);
-    if (selectedLink) {
-        selectedLink.classList.add('active');
-    }
-
-    // Update URL hash without scrolling
-    history.pushState(null, null, `#${tabId}`);
 }
 
-// Handle initial tab on page load
-document.addEventListener('DOMContentLoaded', () => {
-    const hash = window.location.hash.slice(1) || 'swap';
-    switchTab(hash);
-});
+function handleWalletDisconnect() {
+    wallet = null;
+    handleWalletConnection(false);
+    showSuccess('Wallet disconnected');
+}
 
 // Initialize when page loads
 window.addEventListener('load', async function() {

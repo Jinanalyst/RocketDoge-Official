@@ -49,30 +49,54 @@ async function initializeWallet() {
     }
 }
 
+// Get Phantom wallet provider
+function getProvider() {
+    if ('phantom' in window) {
+        const provider = window.phantom?.solana;
+        if (provider?.isPhantom) {
+            return provider;
+        }
+    }
+    return null;
+}
+
 async function connectWallet() {
     try {
-        if (!window.solana) {
-            throw new Error(tasksConfig.ERROR_MESSAGES.NO_WALLET);
+        const provider = getProvider();
+        if (!provider) {
+            throw new Error('Please install Phantom wallet to continue');
         }
 
-        const response = await window.solana.connect();
-        wallet = response;
-        walletAddress = wallet.publicKey.toString();
+        const response = await provider.connect();
+        wallet = provider;
+        const walletAddress = response.publicKey.toString();
 
-        // Update UI
-        updateWalletButton(true);
-        await updateWalletBalance();
+        // Update UI elements
+        const walletBtn = document.getElementById('walletBtn');
+        const connectWalletBtn = document.getElementById('connectWalletBtn');
         
+        if (walletBtn) {
+            walletBtn.textContent = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
+        }
+        if (connectWalletBtn) {
+            connectWalletBtn.textContent = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
+        }
+
         // Enable task verification buttons
         document.querySelectorAll('.verify-task-btn').forEach(btn => {
             btn.disabled = false;
         });
 
+        // Update wallet balance
+        await updateWalletBalance();
+        
         showSuccess('Wallet connected successfully!');
-    } catch (error) {
-        console.error('Wallet connection error:', error);
-        showError(error.message || tasksConfig.ERROR_MESSAGES.CONNECTION_ERROR);
+        return true;
+    } catch (err) {
+        console.error('Failed to connect wallet:', err);
+        showError('Failed to connect wallet. Please try again.');
         updateWalletButton(false);
+        return false;
     }
 }
 

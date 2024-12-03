@@ -13,75 +13,178 @@ let myPools = [];
 // Initialize Solana connection
 async function initializeSolana() {
     try {
+        // Only enable devnet on index.html
+        const isIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
+        const network = isIndexPage ? 'devnet' : 'mainnet-beta';
+        
         connection = new solanaWeb3.Connection(
-            solanaWeb3.clusterApiUrl('devnet'),
+            solanaWeb3.clusterApiUrl(network),
             'confirmed'
         );
-        console.log('Connected to Solana devnet');
+        console.log(`Connected to Solana ${network}`);
         return true;
     } catch (error) {
         console.error('Failed to connect to Solana:', error);
-        showError(poolsConfig.ERROR_MESSAGES.CONNECTION_ERROR);
+        showError('Failed to connect to Solana network. Please try again.');
         return false;
     }
+}
+
+// Get Phantom wallet provider
+function getProvider() {
+    if ('phantom' in window) {
+        const provider = window.phantom?.solana;
+        if (provider?.isPhantom) {
+            return provider;
+        }
+    }
+    return null;
 }
 
 // Connect wallet
 async function connectWallet() {
     try {
-        if (!window.solana) {
-            throw new Error(poolsConfig.ERROR_MESSAGES.NO_WALLET);
+        const provider = getProvider();
+        if (!provider) {
+            throw new Error('Please install Phantom wallet to continue');
         }
 
-        const response = await window.solana.connect();
-        wallet = response;
+        const connectButton = document.getElementById('connectWalletBtn');
+        if (connectButton) {
+            connectButton.disabled = true;
+            connectButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Connecting...';
+        }
+
+        const response = await provider.connect();
+        wallet = provider;
+        const walletAddress = response.publicKey.toString();
         
-        document.getElementById('connectWalletBtn').style.display = 'none';
-        document.getElementById('walletInfo').style.display = 'block';
-        document.getElementById('walletAddress').textContent = 
-            `${wallet.publicKey.toString().slice(0, 4)}...${wallet.publicKey.toString().slice(-4)}`;
+        // Update UI elements
+        updateWalletUI(true, walletAddress);
         
+        // Update pool data
         await updateBalances();
         await updateStats();
         await updateMyPools();
         await updateAllPools();
-    } catch (error) {
-        console.error('Failed to connect wallet:', error);
-        showError(error.message || poolsConfig.ERROR_MESSAGES.CONNECTION_ERROR);
+        
+        showSuccess('Wallet connected successfully!');
+        return true;
+    } catch (err) {
+        console.error('Failed to connect wallet:', err);
+        showError('Failed to connect wallet. Please try again.');
+        updateWalletUI(false);
+        return false;
+    } finally {
+        const connectButton = document.getElementById('connectWalletBtn');
+        if (connectButton) {
+            connectButton.disabled = false;
+            connectButton.innerHTML = wallet ? 'Wallet Connected' : 'Connect Wallet';
+        }
     }
+}
+
+// Update wallet UI elements
+function updateWalletUI(connected, walletAddress = null) {
+    const connectButton = document.getElementById('connectWalletBtn');
+    const walletInfo = document.getElementById('walletInfo');
+    const walletAddressElem = document.getElementById('walletAddress');
+    
+    if (connected && walletAddress) {
+        if (connectButton) connectButton.style.display = 'none';
+        if (walletInfo) walletInfo.style.display = 'block';
+        if (walletAddressElem) {
+            walletAddressElem.textContent = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
+        }
+        
+        // Enable pool creation form
+        const createPoolForm = document.getElementById('createPoolForm');
+        if (createPoolForm) createPoolForm.classList.remove('disabled');
+    } else {
+        if (connectButton) connectButton.style.display = 'block';
+        if (walletInfo) walletInfo.style.display = 'none';
+        if (walletAddressElem) walletAddressElem.textContent = '';
+        
+        // Disable pool creation form
+        const createPoolForm = document.getElementById('createPoolForm');
+        if (createPoolForm) createPoolForm.classList.add('disabled');
+    }
+}
+
+// Handle wallet disconnect
+function handleWalletDisconnect() {
+    wallet = null;
+    updateWalletUI(false);
+    pools = [];
+    myPools = [];
+    updateMyPools();
+    updateAllPools();
+    showSuccess('Wallet disconnected');
 }
 
 // Update token balances
 async function updateBalances() {
-    if (!wallet) return;
+    if (!wallet?.publicKey) return;
     
     try {
+        // Update SOL balance
         const balance = await connection.getBalance(wallet.publicKey);
-        document.getElementById('walletBalance').textContent = (balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4);
+        const solBalance = (balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4);
+        const walletBalanceElem = document.getElementById('walletBalance');
+        if (walletBalanceElem) {
+            walletBalanceElem.textContent = solBalance;
+        }
         
         // Update token balances for pool creation
-        const tokenA = document.getElementById('poolTokenA').value;
-        const tokenB = document.getElementById('poolTokenB').value;
+        const tokenA = document.getElementById('poolTokenA')?.value;
+        const tokenB = document.getElementById('poolTokenB')?.value;
+        const balanceAElem = document.getElementById('balanceA');
+        const balanceBElem = document.getElementById('balanceB');
         
-        // Placeholder for token balance fetching
-        document.getElementById('balanceA').textContent = `Balance: 0.00 ${tokenA}`;
-        document.getElementById('balanceB').textContent = `Balance: 0.00 ${tokenB}`;
+        if (tokenA && balanceAElem) {
+            try {
+                // Placeholder for actual token balance fetching
+                // This should be replaced with actual token balance lookup
+                balanceAElem.textContent = `Balance: 0.00 ${tokenA}`;
+            } catch (err) {
+                console.error(`Error fetching ${tokenA} balance:`, err);
+                balanceAElem.textContent = `Balance: Error`;
+            }
+        }
+        
+        if (tokenB && balanceBElem) {
+            try {
+                // Placeholder for actual token balance fetching
+                // This should be replaced with actual token balance lookup
+                balanceBElem.textContent = `Balance: 0.00 ${tokenB}`;
+            } catch (err) {
+                console.error(`Error fetching ${tokenB} balance:`, err);
+                balanceBElem.textContent = `Balance: Error`;
+            }
+        }
     } catch (error) {
         console.error('Error updating balances:', error);
-        showError(error.message || poolsConfig.ERROR_MESSAGES.BALANCE_UPDATE_FAILED);
+        showError('Failed to update token balances. Please try again.');
     }
 }
 
 // Update platform stats
 async function updateStats() {
     try {
+        const statsElements = {
+            tvl: document.getElementById('totalValueLocked'),
+            volume: document.getElementById('dailyVolume'),
+            fees: document.getElementById('dailyFees')
+        };
+        
         // Placeholder for actual stats calculation
-        document.getElementById('totalValueLocked').textContent = '$1,234,567.89';
-        document.getElementById('dailyVolume').textContent = '$456,789.12';
-        document.getElementById('dailyFees').textContent = '$1,370.37';
+        // This should be replaced with actual stats fetching
+        if (statsElements.tvl) statsElements.tvl.textContent = '$1,234,567.89';
+        if (statsElements.volume) statsElements.volume.textContent = '$456,789.12';
+        if (statsElements.fees) statsElements.fees.textContent = '$1,370.37';
     } catch (error) {
         console.error('Error updating stats:', error);
-        showError(error.message || poolsConfig.ERROR_MESSAGES.STATS_UPDATE_FAILED);
+        showError('Failed to update platform statistics. Please try again.');
     }
 }
 

@@ -37,11 +37,22 @@ function formatTokenAmount(devnetAmount) {
 // Initialize Solana connection to devnet
 async function initializeSolana() {
     try {
+        // Only enable devnet on index.html
+        const isIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
+        const network = isIndexPage ? 'devnet' : 'mainnet-beta';
+        
         connection = new solanaWeb3.Connection(
-            solanaWeb3.clusterApiUrl('devnet'),
+            solanaWeb3.clusterApiUrl(network),
             'confirmed'
         );
-        console.log('Connected to Solana devnet');
+        console.log(`Connected to Solana ${network}`);
+        
+        // Only show airdrop button on index page
+        const airdropBtn = document.getElementById('airdropBtn');
+        if (airdropBtn) {
+            airdropBtn.style.display = isIndexPage ? 'block' : 'none';
+        }
+        
         return true;
     } catch (error) {
         console.error('Failed to connect to Solana:', error);
@@ -51,34 +62,40 @@ async function initializeSolana() {
 }
 
 // Check if Phantom Wallet is installed
-const getProvider = () => {
+function getProvider() {
     if ('phantom' in window) {
         const provider = window.phantom?.solana;
-
         if (provider?.isPhantom) {
             return provider;
         }
     }
-    window.open('https://phantom.app/', '_blank');
-};
+    return null;
+}
 
 // Connect wallet and initialize pool if needed
 async function connectWallet() {
     try {
         const provider = getProvider();
         if (!provider) {
-            throw new Error('No provider found');
+            throw new Error('Please install Phantom wallet to continue');
         }
 
-        await provider.connect();
-        wallet = provider.publicKey;
+        const response = await provider.connect();
+        wallet = provider;
+        const walletAddress = response.publicKey.toString();
         
-        const walletAddress = wallet.toString();
         updateWalletUI(walletAddress);
         await updateUI();
+        
+        // Initialize pool after successful connection
+        await initializePool();
+        
+        showSuccess('Wallet connected successfully!');
+        return true;
     } catch (error) {
         console.error('Wallet connection error:', error);
         showError('Failed to connect wallet. Please make sure Phantom is installed and try again.');
+        return false;
     }
 }
 

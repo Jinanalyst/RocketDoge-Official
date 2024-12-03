@@ -215,33 +215,33 @@ export const TOKEN_CONFIGS = {
         name: 'Solana'
     },
     RDOGE: {
-        mint: 'YOUR_RDOGE_TOKEN_MINT', // Replace with actual RocketDoge token mint
+        mint: '5f6tdW7tNMpaMWuNSQ7cD9qubHBRdB4qmRuLM1oBDKzc', // Our devnet RDOGE token
         decimals: 9,
         symbol: 'RDOGE',
         name: 'RocketDoge'
     },
     USDC: {
-        mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // Solana USDC
+        mint: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU', // Devnet USDC
         decimals: 6,
         symbol: 'USDC',
         name: 'USD Coin'
     }
 };
 
-// Pool configurations
+// Pool configurations for devnet
 export const POOL_CONFIGS = {
     SOL_RDOGE: {
-        address: 'YOUR_SOL_RDOGE_POOL_ADDRESS', // Replace with actual pool address
+        address: null, // We'll create this pool next
         tokenA: TOKEN_CONFIGS.SOL,
         tokenB: TOKEN_CONFIGS.RDOGE
     },
     RDOGE_USDC: {
-        address: 'YOUR_RDOGE_USDC_POOL_ADDRESS', // Replace with actual pool address
+        address: null, // We'll create this pool next
         tokenA: TOKEN_CONFIGS.RDOGE,
         tokenB: TOKEN_CONFIGS.USDC
     },
     SOL_USDC: {
-        address: 'YOUR_SOL_USDC_POOL_ADDRESS', // Replace with actual pool address
+        address: null, // We'll create this pool next
         tokenA: TOKEN_CONFIGS.SOL,
         tokenB: TOKEN_CONFIGS.USDC
     }

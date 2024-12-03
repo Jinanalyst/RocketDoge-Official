@@ -1,0 +1,7 @@
+{
+  "name": "rocketdoge-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "RocketDoge Test Scripts",
+  "main": "create_test_tokens.js"
+}

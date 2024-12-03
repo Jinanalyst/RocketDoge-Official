@@ -7,25 +7,67 @@ class WalletManager {
         this.publicKey = null;
         this.balanceRefreshInterval = null;
         this.eventListeners = new Map();
+        this.network = localStorage.getItem('solanaNetwork') || 'devnet';
         this.init();
     }
 
     init() {
         try {
-            // Initialize Solana connection
-            this.connection = new solanaWeb3.Connection(
-                solanaWeb3.clusterApiUrl('devnet'),
-                'confirmed'
-            );
+            // Initialize Solana connection based on selected network
+            this.updateConnection();
             
             // Setup event listeners
             this.setupEventListeners();
             
             // Check existing connection
             this.checkExistingConnection();
+
+            // Setup auto-reconnect
+            window.addEventListener('focus', () => {
+                this.checkExistingConnection();
+            });
         } catch (error) {
             console.error('Wallet initialization error:', error);
         }
+    }
+
+    updateConnection() {
+        const endpoint = this.network === 'mainnet' 
+            ? 'https://api.mainnet-beta.solana.com'
+            : solanaWeb3.clusterApiUrl('devnet');
+        
+        this.connection = new solanaWeb3.Connection(endpoint, 'confirmed');
+        
+        // Update network display
+        this.updateNetworkDisplay();
+    }
+
+    updateNetworkDisplay() {
+        const networkDisplays = document.querySelectorAll('.network-display');
+        networkDisplays.forEach(display => {
+            if (display) {
+                display.textContent = this.network.toUpperCase();
+                display.className = 'network-display ' + this.network;
+            }
+        });
+    }
+
+    async switchNetwork(network) {
+        if (network === this.network) return;
+        
+        this.network = network;
+        localStorage.setItem('solanaNetwork', network);
+        
+        // Update connection
+        this.updateConnection();
+        
+        // Refresh wallet connection
+        if (this.connected) {
+            await this.checkExistingConnection();
+        }
+        
+        // Show success message
+        this.showSuccess(`Switched to ${network.toUpperCase()}`);
     }
 
     setupEventListeners() {
@@ -57,6 +99,9 @@ class WalletManager {
             this.publicKey = response.publicKey;
             this.provider = provider;
             this.connected = true;
+
+            // Store connection state
+            localStorage.setItem('walletAutoConnect', 'true');
 
             // Update UI and start balance refresh
             await this.handleConnect();
@@ -92,16 +137,31 @@ class WalletManager {
         this.stopBalanceRefresh();
         this.updateUI();
         this.hideTaskSection();
+        
+        // Clear auto-connect setting
+        localStorage.removeItem('walletAutoConnect');
+        
         this.showSuccess('Wallet disconnected');
     }
 
     async checkExistingConnection() {
         const provider = this.getProvider();
-        if (provider?.isConnected && provider.publicKey) {
-            this.provider = provider;
-            this.publicKey = provider.publicKey;
-            this.connected = true;
-            await this.handleConnect();
+        const shouldAutoConnect = localStorage.getItem('walletAutoConnect') === 'true';
+        
+        if (provider) {
+            try {
+                if (shouldAutoConnect && !this.connected) {
+                    await this.connectWallet();
+                } else if (provider.isConnected && provider.publicKey) {
+                    this.provider = provider;
+                    this.publicKey = provider.publicKey;
+                    this.connected = true;
+                    await this.handleConnect();
+                }
+            } catch (error) {
+                console.error('Error checking connection:', error);
+                localStorage.removeItem('walletAutoConnect');
+            }
         }
     }
 
@@ -246,6 +306,10 @@ class WalletManager {
 
     getPublicKey() {
         return this.publicKey;
+    }
+
+    getNetwork() {
+        return this.network;
     }
 }
 

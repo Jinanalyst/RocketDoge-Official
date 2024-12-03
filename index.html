@@ -142,6 +142,34 @@
         .page-title {
             text-align: center;
         }
+        .network-selector select {
+            padding: 0.25rem 1rem;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            background-color: var(--bg-darker) !important;
+            border-color: var(--border-color);
+        }
+        
+        .network-selector select:focus {
+            box-shadow: none;
+            border-color: var(--primary-color);
+        }
+        
+        .network-display {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.65rem;
+            border-radius: 0.5rem;
+        }
+        
+        .network-display.devnet {
+            background-color: #ffc107;
+            color: #000;
+        }
+        
+        .network-display.mainnet {
+            background-color: #198754;
+            color: #fff;
+        }
     </style>
     <!-- Add Web3 Dependencies -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
@@ -163,19 +191,25 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="index.html">Staking</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="dex.html">DEX</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="pools.html">Pools</a>
+                        <a class="nav-link active" href="index.html">Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="tasks.html">Tasks</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="dex.html">DEX</a>
+                    </li>
                 </ul>
-                <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
+                <div class="d-flex align-items-center">
+                    <div class="network-selector me-3">
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary" id="networkSelect">
+                            <option value="devnet">Devnet</option>
+                            <option value="mainnet">Mainnet</option>
+                        </select>
+                    </div>
+                    <span class="network-display me-3 badge bg-warning">DEVNET</span>
+                    <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
+                </div>
             </div>
         </div>
     </nav>
@@ -265,6 +299,18 @@
         import { walletManager } from './js/app.js';
         
         document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize network selector
+            const networkSelect = document.getElementById('networkSelect');
+            if (networkSelect) {
+                // Set initial value
+                networkSelect.value = walletManager.getNetwork();
+                
+                // Add change listener
+                networkSelect.addEventListener('change', async (e) => {
+                    await walletManager.switchNetwork(e.target.value);
+                });
+            }
+            
             // Initialize other components
             setupIndexEventListeners();
         });
@@ -293,14 +339,6 @@
                         return;
                     }
                     await handleUnstake();
-                });
-            }
-
-            // Add event listener for network switch
-            const networkSwitch = document.getElementById('networkSwitch');
-            if (networkSwitch) {
-                networkSwitch.addEventListener('change', async () => {
-                    await switchNetwork();
                 });
             }
         }

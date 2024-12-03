@@ -422,7 +422,138 @@
             
             // Initialize DEX-specific event listeners
             setupDexEventListeners();
+            
+            // Initialize token lists
+            await initializeTokenLists();
         });
+
+        async function initializeTokenLists() {
+            const tokens = await getAvailableTokens();
+            populateTokenLists(tokens);
+            setupTokenChangeListeners();
+        }
+
+        async function getAvailableTokens() {
+            // For now, return a basic list of tokens
+            return [
+                { symbol: 'SOL', name: 'Solana', decimals: 9 },
+                { symbol: 'RDOGE', name: 'RocketDoge', decimals: 9 },
+                { symbol: 'USDC', name: 'USD Coin', decimals: 6 }
+            ];
+        }
+
+        function populateTokenLists(tokens) {
+            const fromSelect = document.getElementById('fromToken');
+            const toSelect = document.getElementById('toToken');
+            
+            fromSelect.innerHTML = '<option value="" disabled selected>Select token</option>';
+            toSelect.innerHTML = '<option value="" disabled selected>Select token</option>';
+            
+            tokens.forEach(token => {
+                const option = document.createElement('option');
+                option.value = token.symbol;
+                option.textContent = `${token.symbol} - ${token.name}`;
+                
+                fromSelect.appendChild(option.cloneNode(true));
+                toSelect.appendChild(option.cloneNode(true));
+            });
+        }
+
+        function setupTokenChangeListeners() {
+            const fromAmount = document.getElementById('fromAmount');
+            const fromToken = document.getElementById('fromToken');
+            const toToken = document.getElementById('toToken');
+            
+            fromAmount.addEventListener('input', updateToAmount);
+            fromToken.addEventListener('change', updateToAmount);
+            toToken.addEventListener('change', updateToAmount);
+        }
+
+        async function updateToAmount() {
+            const fromAmount = document.getElementById('fromAmount').value;
+            const fromToken = document.getElementById('fromToken').value;
+            const toToken = document.getElementById('toToken').value;
+            const toAmountInput = document.getElementById('toAmount');
+            
+            if (!fromAmount || !fromToken || !toToken) {
+                toAmountInput.value = '';
+                return;
+            }
+            
+            // For demo, using a simple 1:1 conversion rate
+            // In production, this would fetch real rates from an oracle or AMM
+            const exchangeRate = await getExchangeRate(fromToken, toToken);
+            const toAmount = parseFloat(fromAmount) * exchangeRate;
+            toAmountInput.value = toAmount.toFixed(6);
+            
+            // Update price impact warning
+            updatePriceImpact(fromAmount, toAmount);
+        }
+
+        async function getExchangeRate(fromToken, toToken) {
+            // In production, this would fetch real rates
+            // For now, using mock rates
+            const rates = {
+                'SOL_RDOGE': 1000,
+                'RDOGE_SOL': 0.001,
+                'SOL_USDC': 60,
+                'USDC_SOL': 0.0166667,
+                'RDOGE_USDC': 0.06,
+                'USDC_RDOGE': 16.6667
+            };
+            
+            const pair = `${fromToken}_${toToken}`;
+            return rates[pair] || 1;
+        }
+
+        function updatePriceImpact(fromAmount, toAmount) {
+            const priceImpactWarning = document.getElementById('priceImpactWarning');
+            const impact = Math.abs((toAmount / fromAmount - 1) * 100);
+            
+            if (impact > 5) {
+                priceImpactWarning.classList.remove('d-none');
+                priceImpactWarning.textContent = `Price impact: ${impact.toFixed(2)}%. Please be careful!`;
+            } else {
+                priceImpactWarning.classList.add('d-none');
+            }
+        }
+
+        async function handleSwap() {
+            try {
+                const fromAmount = document.getElementById('fromAmount').value;
+                const fromToken = document.getElementById('fromToken').value;
+                const toToken = document.getElementById('toToken').value;
+                
+                if (!fromAmount || !fromToken || !toToken) {
+                    walletManager.showError('Please select tokens and enter an amount');
+                    return;
+                }
+                
+                if (!walletManager.isConnected()) {
+                    walletManager.showError('Please connect your wallet first');
+                    return;
+                }
+                
+                // Show loading state
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                
+                // In production, this would call the actual swap function
+                // For now, simulate a swap with a delay
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Update UI after successful swap
+                document.getElementById('fromAmount').value = '';
+                document.getElementById('toAmount').value = '';
+                
+                // Show success message
+                walletManager.showSuccess(`Successfully swapped ${fromAmount} ${fromToken} to ${toToken}`);
+            } catch (error) {
+                console.error('Swap failed:', error);
+                walletManager.showError('Swap failed: ' + error.message);
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
 
         function setupDexEventListeners() {
             // Add event listeners for swap form
@@ -460,6 +591,28 @@
                     switchTab(tabId);
                 });
             });
+
+            // Add event listener for swap direction button
+            const swapDirectionBtn = document.getElementById('swapDirection');
+            if (swapDirectionBtn) {
+                swapDirectionBtn.addEventListener('click', () => {
+                    const fromToken = document.getElementById('fromToken');
+                    const toToken = document.getElementById('toToken');
+                    const fromAmount = document.getElementById('fromAmount');
+                    const toAmount = document.getElementById('toAmount');
+                    
+                    // Swap token selections
+                    const tempToken = fromToken.value;
+                    fromToken.value = toToken.value;
+                    toToken.value = tempToken;
+                    
+                    // Swap amounts
+                    fromAmount.value = toAmount.value;
+                    
+                    // Update the to amount based on new direction
+                    updateToAmount();
+                });
+            }
         }
 
         // Function to switch between tabs
@@ -600,9 +753,11 @@
                             </div>
 
                             <!-- Swap Button -->
-                            <button id="swapButton" class="btn btn-primary w-100" disabled>
-                                Connect Wallet to Swap
-                            </button>
+                            <form id="swapForm">
+                                <button type="submit" class="btn btn-primary w-100" id="swapButton">
+                                    Swap
+                                </button>
+                            </form>
                         </div>
                     </div>
 

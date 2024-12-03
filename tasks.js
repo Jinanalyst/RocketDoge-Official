@@ -27,28 +27,45 @@ let connection = null;
 
 // Setup all event listeners
 function setupEventListeners() {
-    // Wallet connection buttons
-    const walletBtn = document.getElementById('walletBtn');
-    const connectWalletBtn = document.getElementById('connectWalletBtn');
-    
-    if (walletBtn) {
-        walletBtn.addEventListener('click', connectWallet);
-    }
-    if (connectWalletBtn) {
-        connectWalletBtn.addEventListener('click', connectWallet);
-    }
+    try {
+        // Wallet connection buttons
+        const walletBtn = document.getElementById('walletBtn');
+        const connectWalletBtn = document.getElementById('connectWalletBtn');
+        
+        if (walletBtn) {
+            walletBtn.removeEventListener('click', connectWallet);
+            walletBtn.addEventListener('click', connectWallet);
+        }
+        
+        if (connectWalletBtn) {
+            connectWalletBtn.removeEventListener('click', connectWallet);
+            connectWalletBtn.addEventListener('click', connectWallet);
+        }
 
-    // Handle Phantom wallet events
-    window.solana?.on('connect', handleWalletConnect);
-    window.solana?.on('disconnect', handleWalletDisconnect);
-    window.solana?.on('accountChanged', handleAccountChanged);
+        // Handle Phantom wallet events
+        if (window.solana) {
+            // Remove existing listeners if any
+            window.solana.removeAllListeners('connect');
+            window.solana.removeAllListeners('disconnect');
+            window.solana.removeAllListeners('accountChanged');
+            
+            // Add new listeners
+            window.solana.on('connect', handleWalletConnect);
+            window.solana.on('disconnect', handleWalletDisconnect);
+            window.solana.on('accountChanged', handleAccountChanged);
+        }
+
+        console.log('Event listeners setup completed');
+    } catch (error) {
+        console.error('Error setting up event listeners:', error);
+    }
 }
 
 // Check if wallet is already connected
 async function checkWalletConnection() {
     try {
         const provider = getProvider();
-        if (provider && provider.isConnected) {
+        if (provider && provider.isConnected && provider.publicKey) {
             const publicKey = provider.publicKey.toString();
             wallet = provider;
             
@@ -56,9 +73,16 @@ async function checkWalletConnection() {
             updateWalletDisplay(publicKey);
             showTaskSection();
             await updateWalletBalance();
+            
+            // Start balance refresh
+            balanceRefreshInterval = startBalanceRefresh();
+            
+            return true;
         }
+        return false;
     } catch (error) {
         console.error('Error checking wallet connection:', error);
+        return false;
     }
 }
 
@@ -131,6 +155,9 @@ async function connectWallet() {
         // Update wallet balance
         await updateWalletBalance();
         
+        // Start balance refresh interval
+        balanceRefreshInterval = startBalanceRefresh();
+        
         showSuccess('Wallet connected successfully!');
         return true;
     } catch (err) {
@@ -155,7 +182,10 @@ function updateWalletDisplay(publicKey) {
     if (publicKey) {
         // Connected state
         if (walletBtn) {
+            walletBtn.disabled = false;
             walletBtn.textContent = `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`;
+            walletBtn.classList.remove('btn-primary');
+            walletBtn.classList.add('btn-success');
         }
         if (connectWalletBtn) {
             connectWalletBtn.style.display = 'none';
@@ -169,10 +199,14 @@ function updateWalletDisplay(publicKey) {
     } else {
         // Disconnected state
         if (walletBtn) {
+            walletBtn.disabled = false;
             walletBtn.textContent = 'Connect Wallet';
+            walletBtn.classList.remove('btn-success');
+            walletBtn.classList.add('btn-primary');
         }
         if (connectWalletBtn) {
             connectWalletBtn.style.display = 'block';
+            connectWalletBtn.disabled = false;
             connectWalletBtn.textContent = 'Connect Wallet';
         }
         if (walletInfo) {
@@ -648,9 +682,18 @@ function updateWalletButton(connected) {
 function showTaskSection() {
     const taskSection = document.getElementById('taskSection');
     if (taskSection) {
+        // First make it visible but transparent
         taskSection.style.display = 'block';
-        // Trigger reflow
+        taskSection.style.opacity = '0';
+        
+        // Force browser to process the display change
         void taskSection.offsetWidth;
+        
+        // Then animate it
+        taskSection.style.opacity = '1';
+        taskSection.style.transform = 'translateY(0)';
+        
+        // Add visible class for additional animations
         taskSection.classList.add('visible');
     }
 }
@@ -659,7 +702,12 @@ function showTaskSection() {
 function hideTaskSection() {
     const taskSection = document.getElementById('taskSection');
     if (taskSection) {
+        // Start fade out
+        taskSection.style.opacity = '0';
+        taskSection.style.transform = 'translateY(20px)';
         taskSection.classList.remove('visible');
+        
+        // Hide after animation
         setTimeout(() => {
             taskSection.style.display = 'none';
         }, 500); // Match the CSS transition duration

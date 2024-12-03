@@ -181,14 +181,20 @@
 
         /* Task Section Styles */
         #taskSection {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            will-change: opacity, transform;
         }
 
         #taskSection.visible {
             opacity: 1;
             transform: translateY(0);
+        }
+
+        #taskSection:not(.visible) {
+            opacity: 0;
+            transform: translateY(20px);
         }
 
         .spinner-border-sm {
@@ -243,7 +249,7 @@
             </div>
         </div>
 
-        <div id="taskSection" class="mt-4" style="display: none;">
+        <div id="taskSection" class="mt-4" style="display: none; opacity: 0; transform: translateY(20px);">
             <!-- Task 1: Social Media -->
             <div class="task-card">
                 <div class="task-header">
@@ -333,14 +339,30 @@
         import {
             initializeWallet,
             setupEventListeners,
-            checkWalletConnection
+            checkWalletConnection,
+            connectWallet
         } from './tasks.js';
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', async function() {
-            await initializeWallet();
-            setupEventListeners();
-            checkWalletConnection();
+            try {
+                // Initialize wallet connection
+                await initializeWallet();
+                
+                // Setup event listeners for buttons and wallet events
+                setupEventListeners();
+                
+                // Check if wallet is already connected
+                await checkWalletConnection();
+                
+                // Add click handler to connect wallet button
+                const connectWalletBtn = document.getElementById('connectWalletBtn');
+                if (connectWalletBtn) {
+                    connectWalletBtn.onclick = connectWallet;
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
+            }
         });
     </script>
 </body>

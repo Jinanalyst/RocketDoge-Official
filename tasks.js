@@ -1,17 +1,19 @@
 import { tasksConfig } from './config/tasks.config.js';
 
+// Constants from config
+const {
+    PROGRAM_ID,
+    TOKEN_DECIMALS,
+    REFRESH_INTERVAL,
+    ERROR_MESSAGES,
+    TASK_REWARDS
+} = tasksConfig;
+
 // Constants
-const PROGRAM_ID = tasksConfig.PROGRAM_ID;
-const TOKEN_DECIMALS = tasksConfig.TOKEN_DECIMALS;
 const DEX_PAIR_ADDRESS = tasksConfig.DEX_PAIR_ADDRESS;
 const MIN_TRADE_AMOUNT = tasksConfig.MIN_TRADE_AMOUNT; // in SOL
 const TRON_USDT_CONTRACT = tasksConfig.TRON_USDT_CONTRACT;
 const MIN_DEPOSIT_AMOUNT = tasksConfig.MIN_DEPOSIT_AMOUNT; // in USDT
-
-// Wallet state
-let wallet = null;
-let connection = null;
-let walletBalance = 0;
 
 // Social media verification endpoints
 const SOCIAL_VERIFY_ENDPOINTS = tasksConfig.SOCIAL_VERIFY_ENDPOINTS;
@@ -19,15 +21,9 @@ const SOCIAL_VERIFY_ENDPOINTS = tasksConfig.SOCIAL_VERIFY_ENDPOINTS;
 // Task status tracking
 const taskStatus = tasksConfig.TASK_STATUS;
 
-// Reward amounts in ROCKET tokens
-const taskRewards = tasksConfig.TASK_REWARDS;
-
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', async function() {
-    await initializeWallet();
-    setupEventListeners();
-    checkWalletConnection();
-});
+// Wallet state
+let wallet = null;
+let connection = null;
 
 // Setup all event listeners
 function setupEventListeners() {
@@ -66,31 +62,86 @@ async function checkWalletConnection() {
     }
 }
 
-// Handle wallet connect event
-async function handleWalletConnect(publicKey) {
-    if (publicKey) {
-        updateWalletDisplay(publicKey.toString());
-        showTaskSection();
-        await updateWalletBalance();
-        showSuccess('Wallet connected successfully!');
+async function initializeWallet() {
+    try {
+        // Initialize Solana connection
+        connection = new solanaWeb3.Connection(
+            solanaWeb3.clusterApiUrl('devnet'),
+            'confirmed'
+        );
+        
+        // Check for Phantom provider
+        const provider = getProvider();
+        if (!provider) {
+            console.log('Phantom wallet not found');
+            return false;
+        }
+
+        console.log('Solana connection initialized');
+        return true;
+    } catch (error) {
+        console.error('Wallet initialization error:', error);
+        showError(error.message || ERROR_MESSAGES.CONNECTION_ERROR);
+        return false;
     }
 }
 
-// Handle wallet disconnect event
-function handleWalletDisconnect() {
-    wallet = null;
-    updateWalletDisplay(null);
-    hideTaskSection();
-    showSuccess('Wallet disconnected');
+// Helper function to get Phantom provider
+function getProvider() {
+    if ('phantom' in window) {
+        const provider = window.phantom?.solana;
+        if (provider?.isPhantom) {
+            return provider;
+        }
+    }
+    window.open('https://phantom.app/', '_blank');
+    return null;
 }
 
-// Handle account change event
-async function handleAccountChanged(publicKey) {
-    if (publicKey) {
-        updateWalletDisplay(publicKey.toString());
+async function connectWallet() {
+    try {
+        const provider = getProvider();
+        if (!provider) {
+            throw new Error(ERROR_MESSAGES.NO_WALLET);
+        }
+
+        // Update button states to loading
+        const walletBtn = document.getElementById('walletBtn');
+        const connectWalletBtn = document.getElementById('connectWalletBtn');
+        
+        if (walletBtn) {
+            walletBtn.disabled = true;
+            walletBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Connecting...';
+        }
+        if (connectWalletBtn) {
+            connectWalletBtn.disabled = true;
+            connectWalletBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Connecting...';
+        }
+
+        const response = await provider.connect();
+        wallet = provider;
+        const walletAddress = response.publicKey.toString();
+
+        // Update wallet display
+        updateWalletDisplay(walletAddress);
+        
+        // Show task section with animation
+        showTaskSection();
+        
+        // Update wallet balance
         await updateWalletBalance();
-    } else {
-        handleWalletDisconnect();
+        
+        showSuccess('Wallet connected successfully!');
+        return true;
+    } catch (err) {
+        console.error('Failed to connect wallet:', err);
+        showError(err.message || ERROR_MESSAGES.CONNECTION_ERROR);
+        
+        // Reset button states
+        updateWalletDisplay(null);
+        hideTaskSection();
+        
+        return false;
     }
 }
 
@@ -133,111 +184,63 @@ function updateWalletDisplay(publicKey) {
     }
 }
 
-async function initializeWallet() {
-    try {
-        connection = new solanaWeb3.Connection(
-            solanaWeb3.clusterApiUrl('devnet'),
-            'confirmed'
-        );
-        
-        // Check if Phantom Wallet is installed
-        if (!window.solana || !window.solana.isPhantom) {
-            throw new Error(tasksConfig.ERROR_MESSAGES.NO_WALLET);
-        }
+// Update wallet balance
+async function updateWalletBalance() {
+    if (!wallet?.publicKey || !connection) return;
 
-        console.log('Solana connection initialized');
-        return true;
+    try {
+        const balance = await connection.getBalance(wallet.publicKey);
+        const solBalance = (balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4);
+        
+        const walletBalanceElem = document.getElementById('walletBalance');
+        if (walletBalanceElem) {
+            walletBalanceElem.textContent = solBalance;
+        }
     } catch (error) {
-        console.error('Wallet initialization error:', error);
-        showError(error.message || tasksConfig.ERROR_MESSAGES.CONNECTION_ERROR);
-        return false;
+        console.error('Error updating balance:', error);
     }
 }
 
-// Get Phantom wallet provider
-function getProvider() {
-    if ('phantom' in window) {
-        const provider = window.phantom?.solana;
-        if (provider?.isPhantom) {
-            return provider;
-        }
+// Start balance auto-refresh only if wallet is connected
+function startBalanceRefresh() {
+    if (wallet?.publicKey) {
+        return setInterval(updateWalletBalance, REFRESH_INTERVAL);
     }
     return null;
 }
 
-async function connectWallet() {
-    try {
-        const provider = getProvider();
-        if (!provider) {
-            throw new Error('Please install Phantom wallet to continue');
-        }
+let balanceRefreshInterval = null;
 
-        // Update button states to loading
-        const walletBtn = document.getElementById('walletBtn');
-        const connectWalletBtn = document.getElementById('connectWalletBtn');
-        const walletInfo = document.querySelector('.wallet-info');
-        
-        if (walletBtn) {
-            walletBtn.disabled = true;
-            walletBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Connecting...';
-        }
-        if (connectWalletBtn) {
-            connectWalletBtn.disabled = true;
-            connectWalletBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Connecting...';
-        }
-
-        const response = await provider.connect();
-        wallet = provider;
-        const walletAddress = response.publicKey.toString();
-
-        // Update wallet display
-        const walletAddressElem = document.getElementById('walletAddress');
-        if (walletInfo) walletInfo.style.display = 'block';
-        if (walletAddressElem) walletAddressElem.textContent = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
-        
-        // Update buttons
-        if (walletBtn) {
-            walletBtn.disabled = false;
-            walletBtn.textContent = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
-        }
-        if (connectWalletBtn) {
-            connectWalletBtn.style.display = 'none';
-        }
-
-        // Show task section with animation
+// Handle wallet connect event
+async function handleWalletConnect(publicKey) {
+    if (publicKey) {
+        updateWalletDisplay(publicKey.toString());
         showTaskSection();
-
-        // Enable verification buttons
-        document.querySelectorAll('.verify-task-btn').forEach(btn => {
-            btn.disabled = false;
-        });
-
-        // Update wallet balance
         await updateWalletBalance();
-        
+        balanceRefreshInterval = startBalanceRefresh();
         showSuccess('Wallet connected successfully!');
-        return true;
-    } catch (err) {
-        console.error('Failed to connect wallet:', err);
-        showError('Failed to connect wallet. Please try again.');
-        
-        // Reset button states
-        const walletBtn = document.getElementById('walletBtn');
-        const connectWalletBtn = document.getElementById('connectWalletBtn');
-        
-        if (walletBtn) {
-            walletBtn.disabled = false;
-            walletBtn.textContent = 'Connect Wallet';
-        }
-        if (connectWalletBtn) {
-            connectWalletBtn.disabled = false;
-            connectWalletBtn.textContent = 'Connect Wallet';
-        }
+    }
+}
 
-        // Hide task section
-        hideTaskSection();
-        
-        return false;
+// Handle wallet disconnect event
+function handleWalletDisconnect() {
+    wallet = null;
+    updateWalletDisplay(null);
+    hideTaskSection();
+    if (balanceRefreshInterval) {
+        clearInterval(balanceRefreshInterval);
+        balanceRefreshInterval = null;
+    }
+    showSuccess('Wallet disconnected');
+}
+
+// Handle account change event
+async function handleAccountChanged(publicKey) {
+    if (publicKey) {
+        updateWalletDisplay(publicKey.toString());
+        await updateWalletBalance();
+    } else {
+        handleWalletDisconnect();
     }
 }
 
@@ -245,7 +248,7 @@ async function connectWallet() {
 async function verifyTask(taskId) {
     try {
         if (!wallet) {
-            throw new Error(tasksConfig.ERROR_MESSAGES.NO_WALLET);
+            throw new Error(ERROR_MESSAGES.NO_WALLET);
         }
 
         const verifyButton = document.querySelector(`#verifyTask${taskId}`);
@@ -284,12 +287,12 @@ async function verifyTask(taskId) {
             await distributeReward(taskId);
             showSuccess(message || 'Task verified successfully!');
         } else {
-            throw new Error(message || tasksConfig.ERROR_MESSAGES.VERIFICATION_FAILED);
+            throw new Error(message || ERROR_MESSAGES.VERIFICATION_FAILED);
         }
 
     } catch (error) {
         console.error('Task verification error:', error);
-        showError(error.message || tasksConfig.ERROR_MESSAGES.VERIFICATION_FAILED);
+        showError(error.message || ERROR_MESSAGES.VERIFICATION_FAILED);
     } finally {
         const verifyButton = document.querySelector(`#verifyTask${taskId}`);
         verifyButton.disabled = false;
@@ -301,10 +304,10 @@ async function verifyTask(taskId) {
 async function distributeReward(taskId) {
     try {
         if (!wallet) {
-            throw new Error(tasksConfig.ERROR_MESSAGES.NO_WALLET);
+            throw new Error(ERROR_MESSAGES.NO_WALLET);
         }
 
-        const rewardAmount = tasksConfig.TASK_REWARDS[taskId];
+        const rewardAmount = TASK_REWARDS[taskId];
         if (!rewardAmount) {
             throw new Error('Invalid task ID');
         }
@@ -325,7 +328,7 @@ async function distributeReward(taskId) {
         
     } catch (error) {
         console.error('Reward distribution error:', error);
-        showError(error.message || tasksConfig.ERROR_MESSAGES.REWARD_FAILED);
+        showError(error.message || ERROR_MESSAGES.REWARD_FAILED);
     } finally {
         const rewardButton = document.querySelector(`#claimReward${taskId}`);
         if (rewardButton) {
@@ -641,23 +644,6 @@ function updateWalletButton(connected) {
     }
 }
 
-// Update wallet balance
-async function updateWalletBalance() {
-    try {
-        if (!wallet || !wallet.publicKey) return;
-
-        const balance = await connection.getBalance(wallet.publicKey);
-        walletBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
-        
-        document.getElementById('walletBalance').textContent = walletBalance.toFixed(4);
-    } catch (error) {
-        console.error('Error updating wallet balance:', error);
-    }
-}
-
-// Add auto-refresh for balance
-setInterval(updateWalletBalance, 30000); // Update every 30 seconds
-
 // Show task section with animation
 function showTaskSection() {
     const taskSection = document.getElementById('taskSection');
@@ -679,3 +665,15 @@ function hideTaskSection() {
         }, 500); // Match the CSS transition duration
     }
 }
+
+// Export necessary functions
+export {
+    initializeWallet,
+    setupEventListeners,
+    checkWalletConnection,
+    connectWallet,
+    verifyTask,
+    distributeReward,
+    showSuccess,
+    showError
+};

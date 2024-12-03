@@ -199,10 +199,17 @@
     </style>
     <!-- Add Web3 Dependencies -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="wallet.js" defer></script>
-    <!-- Web3 Dependencies -->
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="wallet.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="tasks.js" type="module"></script>
+    <script type="module">
+        import { initializeWallet, setupEventListeners, checkWalletConnection } from './tasks.js';
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeWallet();
+            setupEventListeners();
+            await checkWalletConnection();
+        });
+    </script>
 </head>
 <body>
     <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
@@ -330,32 +337,5 @@
             </div>
         </div>
     </div>
-
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="tasks.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", async () => {
-            // Initialize wallet buttons
-            const walletBtn = document.getElementById("walletBtn");
-            const connectWalletBtn = document.getElementById("connectWalletBtn");
-            
-            if (walletBtn) {
-                walletBtn.addEventListener("click", async () => {
-                    await connectWallet();
-                });
-            }
-            
-            if (connectWalletBtn) {
-                connectWalletBtn.addEventListener("click", async () => {
-                    await connectWallet();
-                });
-            }
-
-            // Initialize other components
-            await initializeSolana();
-            setupTaskEventListeners();
-        });
-    </script>
 </body>
 </html>

@@ -56,6 +56,42 @@
         .navbar h3 {
             margin: 0;
             font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(45deg, var(--primary-color), #FF6B6B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .navbar-nav {
+            gap: 1rem;
+        }
+
+        .nav-link {
+            color: #848D9F !important;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 1.1rem;
+            padding: 0.5rem 1.5rem !important;
+            border-radius: 12px;
+        }
+
+        .nav-link:hover {
+            color: white !important;
+            background: var(--hover-bg);
+        }
+
+        .nav-link.active {
+            color: white !important;
+            background: var(--primary-color);
+        }
+
+        .navbar-toggler {
+            border: 1px solid var(--border-color);
+            padding: 0.5rem;
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.7)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
 
         /* Staking Cards */
@@ -237,11 +273,27 @@
     <nav class="navbar navbar-expand-lg">
         <div class="container">
             <h3>RocketDoge</h3>
-            <div class="network-selector">
-                <select id="networkSelect" class="form-select form-select-sm">
-                    <option value="devnet">Devnet</option>
-                    <option value="mainnet" disabled>Mainnet (Coming Soon)</option>
-                </select>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="tasks.html">Tasks</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="dex.html">DEX</a>
+                    </li>
+                </ul>
+                <div class="network-selector me-3">
+                    <select id="networkSelect" class="form-select form-select-sm">
+                        <option value="devnet">Devnet</option>
+                        <option value="mainnet" disabled>Mainnet (Coming Soon)</option>
+                    </select>
+                </div>
             </div>
         </div>
     </nav>

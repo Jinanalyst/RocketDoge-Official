@@ -68,11 +68,53 @@ const FEE_RECEIVER = '6zkf4DviZZkpWVEh53MrcQV6vGXGpESnNXgAvU6KpBUH';
 const FEE_PERCENTAGE = 0.3; // 0.3% fee
 const PLATFORM_FEE = 0.003; // 0.3%
 
+import { dexConfig } from './config/dex.config.js';
+
 // Global variables
 let wallet = null;
 let connection = null;
 let provider = null;
 let jupiter = null;
+
+// Initialize Solana connection
+async function initializeSolana() {
+    try {
+        connection = new solanaWeb3.Connection(
+            solanaWeb3.clusterApiUrl('devnet'),
+            'confirmed'
+        );
+        console.log('Connected to Solana devnet');
+        return true;
+    } catch (error) {
+        console.error('Failed to connect to Solana:', error);
+        showError(dexConfig.ERROR_MESSAGES.CONNECTION_ERROR);
+        return false;
+    }
+}
+
+// Connect wallet
+async function connectWallet() {
+    try {
+        const provider = getProvider();
+        if (!provider) {
+            throw new Error(dexConfig.ERROR_MESSAGES.NO_WALLET);
+        }
+
+        await provider.connect();
+        wallet = provider;
+        
+        const walletAddress = wallet.publicKey.toString();
+        updateWalletUI(walletAddress);
+        await updateUI();
+        
+        // Enable swap interface
+        document.getElementById('swapInterface').classList.remove('disabled');
+    } catch (error) {
+        console.error('Wallet connection error:', error);
+        showError(error.message || dexConfig.ERROR_MESSAGES.CONNECTION_ERROR);
+        document.getElementById('swapInterface').classList.add('disabled');
+    }
+}
 
 // Tab switching functionality
 function switchTab(tabId) {
@@ -116,15 +158,6 @@ window.addEventListener('load', async function() {
     setupEventListeners();
     populateTokenLists();
 });
-
-async function initializeSolana() {
-    try {
-        connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'), 'confirmed');
-        console.log('Connected to Solana devnet');
-    } catch (error) {
-        console.error('Failed to connect to Solana:', error);
-    }
-}
 
 async function initializeWallet() {
     try {
@@ -390,14 +423,12 @@ async function getJupiterPrice(inputToken, outputToken, amount) {
 async function executeSwap() {
     try {
         if (!wallet || !wallet.publicKey) {
-            alert('Please connect your wallet first');
-            return;
+            throw new Error(dexConfig.ERROR_MESSAGES.NO_WALLET);
         }
 
         const fromAmount = document.getElementById('fromAmount').value;
         if (!fromAmount || isNaN(fromAmount) || fromAmount <= 0) {
-            alert('Please enter a valid amount');
-            return;
+            throw new Error(dexConfig.ERROR_MESSAGES.INVALID_AMOUNT);
         }
 
         const fromToken = document.getElementById('fromToken').value;
@@ -943,45 +974,50 @@ function updateSwapButtonState() {
 
 // Execute swap
 async function executeSwap() {
-    if (!isWalletConnected()) {
-        alert('Please connect your wallet first');
-        return;
-    }
-
-    const fromAmount = document.getElementById('fromAmount').value;
-    const fromToken = document.getElementById('fromToken').value;
-    const toToken = document.getElementById('toToken').value;
-
-    if (!fromAmount || !fromToken || !toToken) {
-        alert('Please enter valid swap details');
-        return;
-    }
-
     try {
-        // Disable swap button during transaction
+        if (!wallet || !wallet.publicKey) {
+            throw new Error(dexConfig.ERROR_MESSAGES.NO_WALLET);
+        }
+
+        const fromAmount = document.getElementById('fromAmount').value;
+        if (!fromAmount || isNaN(fromAmount) || fromAmount <= 0) {
+            throw new Error(dexConfig.ERROR_MESSAGES.INVALID_AMOUNT);
+        }
+
+        // Add loading state
         const swapButton = document.getElementById('swapButton');
         swapButton.disabled = true;
         swapButton.textContent = 'Swapping...';
 
-        // Create and send transaction
-        const transaction = await createSwapTransaction(fromAmount, fromToken, toToken);
-        const signature = await sendTransaction(transaction);
-
-        // Wait for confirmation
-        await connection.confirmTransaction(signature);
-
-        // Update UI
-        document.getElementById('fromAmount').value = '';
-        document.getElementById('toAmount').value = '';
-        updateTokenBalances();
+        const fromToken = document.getElementById('fromToken').value;
+        const toToken = document.getElementById('toToken').value;
         
-        // Show success message
-        alert('Swap completed successfully!');
+        // Get quote and check price impact
+        const quote = await getJupiterQuote(fromToken, toToken, fromAmount);
+        const priceImpact = calculatePriceImpact(quote);
+        
+        if (priceImpact > dexConfig.MAX_SLIPPAGE) {
+            throw new Error(dexConfig.ERROR_MESSAGES.PRICE_IMPACT_HIGH);
+        }
+
+        // Execute swap transaction
+        const transaction = await createSwapTransaction(quote);
+        const signature = await wallet.signAndSendTransaction(transaction);
+        
+        await connection.confirmTransaction(signature);
+        showSuccess('Swap completed successfully!');
+        
+        // Update UI
+        await updateBalances();
+        await updateTokenPrices();
     } catch (error) {
-        console.error('Swap failed:', error);
-        alert('Swap failed. Please try again.');
+        console.error('Swap error:', error);
+        showError(error.message || dexConfig.ERROR_MESSAGES.SWAP_FAILED);
     } finally {
-        updateSwapButtonState();
+        // Reset button state
+        const swapButton = document.getElementById('swapButton');
+        swapButton.disabled = false;
+        swapButton.textContent = 'Swap';
     }
 }
 

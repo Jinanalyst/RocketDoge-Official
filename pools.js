@@ -1,3 +1,5 @@
+import { poolsConfig } from './config/pools.config.js';
+
 // Constants
 const FEE_RECIPIENT = '6zkf4DviZZkpWVEh53MrcQV6vGXGpESnNXgAvU6KpBUH';
 const PLATFORM_FEE = 0.003; // 0.3%
@@ -11,10 +13,16 @@ let myPools = [];
 // Initialize Solana connection
 async function initializeSolana() {
     try {
-        connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'), 'confirmed');
+        connection = new solanaWeb3.Connection(
+            solanaWeb3.clusterApiUrl('devnet'),
+            'confirmed'
+        );
         console.log('Connected to Solana devnet');
+        return true;
     } catch (error) {
         console.error('Failed to connect to Solana:', error);
+        showError(poolsConfig.ERROR_MESSAGES.CONNECTION_ERROR);
+        return false;
     }
 }
 
@@ -22,8 +30,7 @@ async function initializeSolana() {
 async function connectWallet() {
     try {
         if (!window.solana) {
-            alert('Please install Phantom wallet');
-            return;
+            throw new Error(poolsConfig.ERROR_MESSAGES.NO_WALLET);
         }
 
         const response = await window.solana.connect();
@@ -38,8 +45,9 @@ async function connectWallet() {
         await updateStats();
         await updateMyPools();
         await updateAllPools();
-    } catch (err) {
-        console.error('Failed to connect wallet:', err);
+    } catch (error) {
+        console.error('Failed to connect wallet:', error);
+        showError(error.message || poolsConfig.ERROR_MESSAGES.CONNECTION_ERROR);
     }
 }
 
@@ -60,6 +68,7 @@ async function updateBalances() {
         document.getElementById('balanceB').textContent = `Balance: 0.00 ${tokenB}`;
     } catch (error) {
         console.error('Error updating balances:', error);
+        showError(error.message || poolsConfig.ERROR_MESSAGES.BALANCE_UPDATE_FAILED);
     }
 }
 
@@ -72,38 +81,40 @@ async function updateStats() {
         document.getElementById('dailyFees').textContent = '$1,370.37';
     } catch (error) {
         console.error('Error updating stats:', error);
+        showError(error.message || poolsConfig.ERROR_MESSAGES.STATS_UPDATE_FAILED);
     }
 }
 
 // Create new pool
 async function handleCreatePool() {
-    if (!wallet) {
-        alert('Please connect your wallet first');
-        return;
-    }
-
-    const tokenA = document.getElementById('poolTokenA').value;
-    const tokenB = document.getElementById('poolTokenB').value;
-    const amountA = document.getElementById('poolAmountA').value;
-    const amountB = document.getElementById('poolAmountB').value;
-
-    if (!tokenA || !tokenB || !amountA || !amountB) {
-        alert('Please fill in all fields');
-        return;
-    }
-
-    if (tokenA === tokenB) {
-        alert('Cannot create pool with same tokens');
-        return;
-    }
-
     try {
-        const createPoolBtn = document.getElementById('createPoolBtn');
-        createPoolBtn.disabled = true;
-        createPoolBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Pool...';
+        if (!wallet) {
+            throw new Error(poolsConfig.ERROR_MESSAGES.NO_WALLET);
+        }
+
+        const tokenA = document.getElementById('poolTokenA').value;
+        const tokenB = document.getElementById('poolTokenB').value;
+        const amountA = parseFloat(document.getElementById('poolAmountA').value);
+        const amountB = parseFloat(document.getElementById('poolAmountB').value);
+
+        if (!amountA || !amountB || amountA <= 0 || amountB <= 0) {
+            throw new Error(poolsConfig.ERROR_MESSAGES.INVALID_AMOUNT);
+        }
+
+        if (amountA < poolsConfig.MIN_LIQUIDITY || amountB < poolsConfig.MIN_LIQUIDITY) {
+            throw new Error(poolsConfig.ERROR_MESSAGES.MIN_LIQUIDITY_ERROR);
+        }
+
+        if (tokenA === tokenB) {
+            throw new Error(poolsConfig.ERROR_MESSAGES.SAME_TOKENS_ERROR);
+        }
+
+        // Add loading state
+        const createButton = document.getElementById('createPoolBtn');
+        createButton.disabled = true;
+        createButton.textContent = 'Creating Pool...';
 
         // Create pool logic here
-        // This is a placeholder for the actual implementation
         const poolData = {
             id: Date.now().toString(),
             tokenA,
@@ -111,7 +122,7 @@ async function handleCreatePool() {
             amountA,
             amountB,
             creator: wallet.publicKey.toString(),
-            tvl: `$${(parseFloat(amountA) * 20 + parseFloat(amountB)).toFixed(2)}`,
+            tvl: `$${(amountA * 20 + amountB).toFixed(2)}`,
             volume: '$0.00',
             apr: '0.00%',
             myShare: '100%'
@@ -124,16 +135,14 @@ async function handleCreatePool() {
         await updateAllPools();
         await updateStats();
 
-        createPoolBtn.disabled = false;
-        createPoolBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Create Pool';
-        
-        alert('Pool created successfully!');
+        showSuccess('Pool created successfully!');
     } catch (error) {
-        console.error('Error creating pool:', error);
-        alert('Failed to create pool: ' + error.message);
-        
-        createPoolBtn.disabled = false;
-        createPoolBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Create Pool';
+        console.error('Failed to create pool:', error);
+        showError(error.message || poolsConfig.ERROR_MESSAGES.POOL_CREATE_FAILED);
+    } finally {
+        const createButton = document.getElementById('createPoolBtn');
+        createButton.disabled = false;
+        createButton.textContent = 'Create Pool';
     }
 }
 
@@ -497,3 +506,29 @@ window.addEventListener('walletConnectionChanged', () => {
         displayUserLiquidity();
     }
 });
+
+// Add success notification function
+function showSuccess(message) {
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success';
+    notification.role = 'alert';
+    notification.textContent = message;
+    
+    const container = document.querySelector('.container');
+    container.insertBefore(notification, container.firstChild);
+    
+    setTimeout(() => notification.remove(), 5000);
+}
+
+// Show error message
+function showError(message) {
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-danger';
+    notification.role = 'alert';
+    notification.textContent = message;
+    
+    const container = document.querySelector('.container');
+    container.insertBefore(notification, container.firstChild);
+    
+    setTimeout(() => notification.remove(), 5000);
+}

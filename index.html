@@ -147,8 +147,27 @@
 <body>
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <h3>RocketDoge Staking</h3>
-            <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
+            <h3>RocketDoge</h3>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="index.html">Staking</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="dex.html">DEX</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="pools.html">Pools</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="tasks.html">Tasks</a>
+                    </li>
+                </ul>
+                <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
+            </div>
         </div>
     </nav>
 
@@ -228,5 +247,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@latest/dist/browser/anchor.min.js"></script>
     <script src="app.js" type="module"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

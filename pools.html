@@ -12,12 +12,26 @@
 <body>
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <h3>RocketDoge Platform</h3>
-            <div class="navbar-nav">
-                <a class="nav-link" href="index.html">Staking</a>
-                <a class="nav-link" href="tasks.html">Tasks</a>
-                <a class="nav-link" href="dex.html">DEX</a>
-                <a class="nav-link active" href="pools.html">Pools</a>
+            <h3>RocketDoge</h3>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Staking</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="dex.html">DEX</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="pools.html">Pools</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="tasks.html">Tasks</a>
+                    </li>
+                </ul>
+                <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
             </div>
         </div>
     </nav>
@@ -113,5 +127,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="pools.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

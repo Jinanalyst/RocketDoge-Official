@@ -1,0 +1,6 @@
+[programs.localnet]
+rocketdoge_staking = "target/deploy/rocketdoge_staking.so"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/devnet.json"

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RocketDoge DEX Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #FF007A;
+            --bg-dark: #191B1F;
+            --bg-darker: #131517;
+            --card-bg: #212429;
+            --border-color: #2C2F36;
+            --hover-bg: #2C2F36;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: var(--bg-darker) !important;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .navbar h3 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--primary-color), #FF6B6B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .navbar-nav {
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: #848D9F !important;
+            font-weight: 500;
+            transition: color 0.2s;
+            font-size: 1.1rem;
+            padding: 0.5rem 1.5rem !important;
+            border-radius: 12px;
+        }
+
+        .nav-link:hover {
+            color: white !important;
+            background: var(--hover-bg);
+        }
+
+        .nav-link.active {
+            color: white !important;
+            background: var(--primary-color);
+        }
+
+        .swap-container {
+            max-width: 480px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .swap-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+        }
+
+        .token-select-button {
+            background: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .token-select-button:hover {
+            background: var(--hover-bg);
+        }
+
+        .token-input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            width: 100%;
+            padding: 0.5rem;
+            text-align: right;
+        }
+
+        .token-input:focus {
+            outline: none;
+        }
+
+        .swap-arrow-container {
+            background: var(--card-bg);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: -20px auto;
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+            border: 4px solid var(--bg-dark);
+        }
+
+        .swap-arrow-container:hover {
+            background: var(--hover-bg);
+        }
+
+        .swap-button {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-weight: 600;
+            padding: 1rem;
+            width: 100%;
+            margin-top: 1rem;
+            transition: opacity 0.2s;
+        }
+
+        .swap-button:hover {
+            opacity: 0.8;
+        }
+
+        .swap-button:disabled {
+            background: #41434A;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .token-logo {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+
+        .price-info {
+            background: var(--bg-darker);
+            border-radius: 16px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.5rem 0;
+            color: #848D9F;
+        }
+
+        .price-row span:last-child {
+            color: white;
+        }
+
+        .settings-icon {
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .settings-icon:hover {
+            background: var(--hover-bg);
+        }
+
+        .wallet-button {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+        }
+
+        .wallet-button:hover {
+            opacity: 0.8;
+        }
+
+        .token-balance {
+            color: #848D9F;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .page-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .portfolio-section {
+            margin-bottom: 2rem;
+        }
+
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .portfolio-token {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .portfolio-token img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+
+        .menu-navigation {
+            background: var(--bg-darker);
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .menu-nav {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+        }
+
+        .menu-nav-link {
+            color: #848D9F;
+            font-weight: 500;
+            transition: color 0.2s;
+            font-size: 1.1rem;
+            padding: 0.5rem 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .menu-nav-link.active {
+            color: white;
+            background: var(--primary-color);
+        }
+
+        .tab-contents {
+            margin-top: 2rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .portfolio-stats-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .portfolio-stats-card .value {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .portfolio-stats-card .change {
+            font-size: 0.9rem;
+            color: #848D9F;
+        }
+
+        .token-list {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1rem;
+        }
+
+        .transaction-history {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1rem;
+        }
+
+        .transaction-history table {
+            color: white;
+        }
+
+        .transaction-history table th {
+            color: #848D9F;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <h3>RocketDoge Platform</h3>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <div class="navbar-nav">
+                    <a class="nav-link" href="index.html">Home</a>
+                    <a class="nav-link" href="tasks.html">Tasks</a>
+                    <a class="nav-link active" href="dex.html">DEX</a>
+                    <a class="nav-link" href="pools.html">Pools</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <!-- Menu Navigation -->
+        <div class="menu-navigation mb-4">
+            <nav class="menu-nav">
+                <a href="#swap" class="menu-nav-link active" onclick="switchTab('swap')">Swap</a>
+                <a href="#portfolio" class="menu-nav-link" onclick="switchTab('portfolio')">Portfolio</a>
+                <a href="#history" class="menu-nav-link" onclick="switchTab('history')">History</a>
+            </nav>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="tab-contents">
+            <!-- Swap Tab -->
+            <div id="swap" class="tab-content active">
+                <div class="container">
+                    <div class="page-title">
+                        <h1>RocketDoge DEX</h1>
+                        <p>Swap tokens instantly with the best rates</p>
+                    </div>
+
+                    <div id="walletSection" class="text-center mb-4">
+                        <button id="connectWalletBtn" class="wallet-button">Connect Wallet</button>
+                        <div class="wallet-info" style="display: none;">
+                            <div class="wallet-address" id="walletAddress"></div>
+                            <div class="mt-2">Balance: <span id="walletBalance">0</span> SOL</div>
+                        </div>
+                    </div>
+
+                    <!-- Portfolio Section -->
+                    <div class="portfolio-section mb-4" style="display: none;">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="m-0">Your Portfolio</h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshPortfolio()">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="portfolio-grid" id="portfolioGrid">
+                                    <!-- Token cards will be added here dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Swap Interface -->
+                    <div id="swapInterface" class="swap-container">
+                        <div class="swap-card">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="m-0">Swap</h5>
+                                <div class="settings-icon" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                                    <i class="fas fa-cog"></i>
+                                </div>
+                            </div>
+
+                            <!-- From Token -->
+                            <div class="token-select-button mb-3">
+                                <div class="d-flex justify-content-between w-100">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img id="fromTokenLogo" src="" alt="" class="token-logo">
+                                        <select id="fromToken" class="form-select bg-transparent border-0 text-white">
+                                            <option value="SOL">SOL</option>
+                                            <option value="USDC">USDC</option>
+                                            <option value="USDT">USDT</option>
+                                            <option value="RDOGE">RDOGE</option>
+                                        </select>
+                                    </div>
+                                    <input type="number" id="fromAmount" class="token-input" placeholder="0.0">
+                                </div>
+                                <div class="token-balance" id="fromBalance">Balance: 0.00</div>
+                            </div>
+
+                            <!-- Swap Arrow -->
+                            <div class="swap-arrow-container" id="swapDirection">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+
+                            <!-- To Token -->
+                            <div class="token-select-button mt-3">
+                                <div class="d-flex justify-content-between w-100">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img id="toTokenLogo" src="" alt="" class="token-logo">
+                                        <select id="toToken" class="form-select bg-transparent border-0 text-white">
+                                            <option value="USDC">USDC</option>
+                                            <option value="SOL">SOL</option>
+                                            <option value="USDT">USDT</option>
+                                            <option value="RDOGE">RDOGE</option>
+                                        </select>
+                                    </div>
+                                    <input type="number" id="toAmount" class="token-input" placeholder="0.0" disabled>
+                                </div>
+                                <div class="token-balance" id="toBalance">Balance: 0.00</div>
+                            </div>
+
+                            <!-- Price Info -->
+                            <div class="price-info">
+                                <div class="price-row">
+                                    <span>Price Impact</span>
+                                    <span id="priceImpact">0.00%</span>
+                                </div>
+                                <div class="price-row">
+                                    <span>Minimum Received</span>
+                                    <span id="minReceived">0</span>
+                                </div>
+                                <div class="price-row">
+                                    <span>Network Fee</span>
+                                    <span id="networkFee">~0.000005 SOL</span>
+                                </div>
+                                <div class="price-row">
+                                    <span>Platform Fee (0.3%)</span>
+                                    <span id="platformFee">-</span>
+                                </div>
+                                <div class="price-row">
+                                    <span>Slippage Tolerance</span>
+                                    <span id="currentSlippage">0.5%</span>
+                                </div>
+                            </div>
+
+                            <!-- Swap Button -->
+                            <button id="swapButton" class="swap-button" disabled>
+                                Swap
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Settings Modal -->
+                    <div class="modal fade" id="settingsModal" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content bg-dark text-white">
+                                <div class="modal-header border-secondary">
+                                    <h5 class="modal-title">Transaction Settings</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Slippage Tolerance</label>
+                                        <div class="d-flex gap-2 mb-2">
+                                            <button class="btn btn-outline-primary" onclick="setSlippage(0.1)">0.1%</button>
+                                            <button class="btn btn-outline-primary" onclick="setSlippage(0.5)">0.5%</button>
+                                            <button class="btn btn-outline-primary" onclick="setSlippage(1.0)">1.0%</button>
+                                        </div>
+                                        <div class="input-group">
+                                            <input type="number" id="customSlippage" class="form-control bg-dark text-white" placeholder="Custom">
+                                            <span class="input-group-text bg-dark text-white">%</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Transaction Deadline</label>
+                                        <div class="input-group">
+                                            <input type="number" id="transactionDeadline" class="form-control bg-dark text-white" value="30">
+                                            <span class="input-group-text bg-dark text-white">minutes</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Portfolio Tab -->
+            <div id="portfolio" class="tab-content">
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="portfolio-stats-card">
+                            <h3>Total Balance</h3>
+                            <div class="value" id="totalBalance">$0.00</div>
+                            <div class="change" id="totalBalanceChange">0%</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="portfolio-stats-card">
+                            <h3>24h Change</h3>
+                            <div class="value" id="dailyChange">$0.00</div>
+                            <div class="change" id="dailyChangePercent">0%</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="portfolio-stats-card">
+                            <h3>Total Trades</h3>
+                            <div class="value" id="totalTrades">0</div>
+                            <div class="subtitle">Last 30 days</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="token-list mt-4">
+                    <!-- Token list will be populated dynamically -->
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history" class="tab-content">
+                <div class="transaction-history">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionHistory">
+                                <!-- Transaction history will be populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jup-ag/core@latest/dist/index.umd.js"></script>
+    <script src="dex.js"></script>
+</body>
+</html>

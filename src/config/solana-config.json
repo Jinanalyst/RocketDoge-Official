@@ -1,0 +1,5 @@
+{
+  "cluster": "devnet",  // Change to "mainnet" for production
+  "rpc_url": "https://api.devnet.solana.com",
+  "web3_url": "https://www.sollet.io"
+}
